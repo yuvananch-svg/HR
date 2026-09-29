@@ -8,4 +8,46 @@
 .emptyCard { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 270px; padding: 28px; border: 1px solid #eceef1; border-radius: 8px; background: linear-gradient(130deg, #fff 52%, #fffafa 100%); text-align: center; }.emptyIcon { position: relative; display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 15px; border-radius: 50%; background: #fff0f2; }.emptyIcon::before, .emptyIcon::after { position: absolute; display: block; width: 20px; height: 2px; border-radius: 2px; background: #c32439; content: ""; }.emptyIcon::after { transform: rotate(90deg); }.emptyIcon span { position: absolute; width: 33px; height: 33px; border: 1px solid #f5dadd; border-radius: 50%; }.emptyCard h2 { margin: 0; color: #313a49; font-size: 15px; font-weight: 700; }.emptyCard p { margin-top: 7px; color: #858c98; font-size: 11px; }.emptyFoot { margin-top: 20px; padding-top: 13px; border-top: 1px solid #f0f1f3; color: #9da3ad; font-size: 10px; }
 .states { margin-top: 27px; }.statesHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }.statesHeader h2 { margin: 0; color: #374050; font-size: 13px; }.statesHeader p { margin-top: 4px; color: #979da7; font-size: 10px; }.statesHeader > span { padding: 5px 8px; border: 1px solid #eeeff2; border-radius: 4px; color: #8b919c; font-size: 9px; }.stateGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }.stateCard { display: flex; gap: 10px; min-height: 69px; padding: 14px 12px; border: 1px solid #eceef1; border-radius: 7px; background: #fff; }.stateCard strong { color: #475061; font-size: 10px; }.stateCard p { margin-top: 4px; color: #9298a3; font-size: 9px; line-height: 1.5; }.stateDot { flex: 0 0 7px; width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #d1d4da; }.loadingDot { background: #d9a742; box-shadow: 0 0 0 3px #fbf3df; }.errorDot { background: #d24958; box-shadow: 0 0 0 3px #fce9eb; }.emptyDot { background: #9fa5af; box-shadow: 0 0 0 3px #f0f1f3; }.safetyNote { margin-top: 28px; color: #a2a7b0; font-size: 9px; text-align: right; }
 @media (max-width: 900px) { .sidebar { width: 210px; }.main { width: calc(100% - 210px); margin-left: 210px; }.topbar { padding: 0 22px; }.content { padding: 37px 22px 28px; }.stateGrid { grid-template-columns: 1fr; }.stateCard { min-height: unset; }.navLabel { margin-top: 38px; } }
-@media (max-width: 620px) { .app { display: block; padding-bottom: 67px; }.sidebar { position: fixed; inset: auto 0 0; z-index: 5; width: 100%; height: 64px; padding: 5px 7px max(5px, env(safe-area-inset-bottom)); border-top: 1px solid #eceef1; border-right: 0; background: rgb(255 255 255 / 97%); }.sidebar > .brand, .navLabel, .sidebarFoot { display: none; }.nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 100%; }.navItem { flex-direction: column; justify-content: center; gap: 1px; min-height: 0; padding: 3px 1px; border-radius: 6px; font-size: 9px; }.navIcon { height: 23px; font-size: 18px; }.main { width: 100%; min-height: 100vh; margin: 0; }.topbar { position: relative; display: block; height: auto; min-height: 82px; padding: 13px 18px 11px; }.mobileHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }.mobileHeader .brand { gap: 8px; }.mobileHeader .brand strong { font-size: 13px; }.mobileHeader .brand small { display: none; }.mobileHeader .mark { transform: scale(.82); transform-origin: left center; width: 26px; }.backLink { color: #9f1a2d; font-size: 10px; text-decoration: none; }.breadcrumb { gap: 7px; font-size: 9px; }.previewBadge { position: absolute; top: 17px; right: 18px; max-width: 150px; padding: 5px 7px; overflow: hidden; font-size: 0; }.previewBadge span { flex: 0 0 6px; }.previewBadge::after { color: #a12435; font-size: 9px; content: "ตัวอย่าง · ไม่มีข้อมูล"; }.content { padding: 30px 18px 25px; }.titleRow { margin-bottom: 19px; }.titleRow h1 { font-size: 25px; }.description { max-width: 240px; font-size: 10px; line-height: 1.6; }.emptyCard { min-height: 245px; padding: 25px 19px; }.emptyCard p { max-width: 260px; line-height: 1.7; }.emptyFoot { font-size: 9px; line-height: 1.6; }.states { margin-top: 23px; }.statesHeader h2 { font-size: 12px; }.safetyNote { margin-top: 20px; font-size: 8px; } }
+@media (max-width: 620px) {
+  .app { display: block; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .sidebar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 5;
+    width: 100%;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding: 5px 7px env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid #eceef1;
+    border-right: 0;
+    background: rgb(255 255 255 / 97%);
+  }
+  .sidebar > .brand, .navLabel, .sidebarFoot { display: none; }
+  .nav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 100%; }
+  .navItem { flex-direction: column; justify-content: center; gap: 1px; min-height: 44px; padding: 3px 1px; border-radius: 6px; font-size: 11px; }
+  .navIcon { height: 23px; font-size: 18px; }
+  .main { width: 100%; min-height: 100vh; margin: 0; }
+  .topbar { position: relative; display: block; height: auto; min-height: 82px; padding: 13px 18px 11px; }
+  .mobileHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+  .mobileHeader .brand { gap: 8px; }
+  .mobileHeader .brand strong { font-size: 13px; }
+  .mobileHeader .brand small { display: none; }
+  .mobileHeader .mark { transform: scale(.82); transform-origin: left center; width: 26px; }
+  .backLink { color: #9f1a2d; font-size: 12px; text-decoration: none; }
+  .breadcrumb { gap: 7px; font-size: 10px; }
+  .previewBadge { position: static; width: fit-content; max-width: 100%; margin-top: 10px; padding: 6px 9px; overflow: visible; font-size: 11px; }
+  .previewBadge span { flex: 0 0 6px; }
+  .content { padding: 30px 18px 25px; }
+  .titleRow { margin-bottom: 19px; }
+  .titleRow h1 { font-size: 25px; }
+  .description { max-width: 240px; font-size: 11px; line-height: 1.6; }
+  .emptyCard { min-height: 245px; padding: 25px 19px; }
+  .emptyCard p { max-width: 260px; line-height: 1.7; }
+  .emptyFoot { font-size: 10px; line-height: 1.6; }
+  .states { margin-top: 23px; }
+  .statesHeader h2 { font-size: 12px; }
+  .statesHeader p { font-size: 11px; }
+  .stateCard strong { font-size: 11px; }
+  .stateCard p { font-size: 10px; }
+  .safetyNote { margin-top: 20px; font-size: 10px; }
+}
