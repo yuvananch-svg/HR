@@ -53,6 +53,21 @@ describe("LeaveEntryForm preview gate", () => {
     expect(screen.getByText("7")).toBeInTheDocument();
   });
 
+  it("shows Thai labels for skipped holidays and weekends", async () => {
+    mocks.previewLeaveAction.mockResolvedValueOnce({ success: true, preview: {
+      ...preview,
+      days: [
+        { leave_date: "2026-10-03", days: 0, half_period: null, counts: false, reason: "weekend" },
+        { leave_date: "2026-10-05", days: 0, half_period: null, counts: false, reason: "holiday" },
+      ],
+    } });
+    render(<LeaveEntryForm employees={employees} types={types} />);
+    fireEvent.click(screen.getByRole("button", { name: /ดูตัวอย่างวันลา/ }));
+    expect(await screen.findByText(/2026-10-03 · 0 วัน · ไม่นับวันทำงาน \(เสาร์–อาทิตย์\)/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-10-05 · 0 วัน · ไม่นับวันทำงาน \(วันหยุด\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/weekend|holiday/)).not.toBeInTheDocument();
+  });
+
   it("ignores a preview response that finishes after the form has changed", async () => {
     const request = deferred<{ success: boolean; preview: typeof preview }>();
     mocks.previewLeaveAction.mockReturnValueOnce(request.promise);
@@ -90,6 +105,27 @@ describe("LeaveEntryForm preview gate", () => {
     expect(confirmation).not.toBeChecked();
     expect(screen.getByRole("button", { name: /ยืนยันบันทึกวันลา/ })).toBeDisabled();
     fireEvent.click(confirmation);
+    expect(screen.getByRole("button", { name: /ยืนยันบันทึกวันลา/ })).toBeEnabled();
+  });
+
+  it("remounts with the refreshed revision and values after an edit", async () => {
+    const renderForm = (revision: string, startDate: string, endDate: string) => (
+      <LeaveEntryForm key={revision} employees={employees} types={types} editing initial={{
+        employee_id: employeeId, leave_type_id: typeId, start_date: startDate, end_date: endDate,
+        entry_id: "33333333-3333-4333-8333-333333333333", expected_revision: revision,
+      }} />
+    );
+    const view = render(renderForm("revision-1", "2026-10-01", "2026-10-01"));
+    await previewAndConfirm();
+    expect(screen.getByRole("button", { name: /ยืนยันบันทึกวันลา/ })).toBeEnabled();
+
+    view.rerender(renderForm("revision-2", "2026-10-06", "2026-10-07"));
+    expect(screen.queryByRole("region", { name: "ตัวอย่างวันลา" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("วันที่เริ่มต้น")).toHaveValue("2026-10-06");
+    expect(screen.getByLabelText("วันที่สิ้นสุด")).toHaveValue("2026-10-07");
+    expect((formElement().elements.namedItem("expected_revision") as HTMLInputElement).value).toBe("revision-2");
+    expect(screen.getByRole("button", { name: /ยืนยันบันทึกวันลา/ })).toBeDisabled();
+    await previewAndConfirm();
     expect(screen.getByRole("button", { name: /ยืนยันบันทึกวันลา/ })).toBeEnabled();
   });
 
