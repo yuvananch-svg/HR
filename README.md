@@ -260,8 +260,8 @@
 - [x] **5.5** แก้ไขและ stale revision — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
 - [x] **5.6** ยกเลิกและคืนยอด — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
 - [x] **5.7** Audit และประวัติการเปลี่ยน — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
-- [ ] **5.8** หน้าใช้งาน ภาษาไทย มือถือ และสิทธิ์
-- [ ] **5.9** Tests, production QA, deploy และ cleanup
+- [ ] **5.8** หน้าใช้งาน ภาษาไทย มือถือ และสิทธิ์ — มีฟอร์มและการตรวจสิทธิ์ฝั่งฐานข้อมูลแล้ว; ยังขาด owner/HR browser QA จริงและตรวจ viewport 375px
+- [ ] **5.9** Tests, production QA, deploy และ cleanup — local tests 61/61, lint/typecheck/build และ SQL regression/rollback ผ่าน; ยังขาด two-session race ที่ทำงานพร้อมกันจริง, browser QA และ deploy
 
 **หลักฐานรอบตรวจ 5.8–5.9 (2026-09-30):** ตรวจโค้ดพบฟอร์มสร้าง/แก้ไขและ preview/confirm บนหน้าวันลา, ฟอร์มแก้/ยกเลิกและ audit บนหน้ารายละเอียด; action หลังเขียน revalidate หน้าวันลา รายละเอียดพนักงาน และภาพรวม. ตรวจ validation ยกเลิกแล้วไม่พบ bug เพิ่ม: `val()` trim ค่าก่อน action ตรวจความยาวเหตุผล. `npm test -- --reporter=dot` ผ่าน 61/61; `npm run lint`, `npx tsc --noEmit`, `npm run build` ผ่านทั้งหมด. SQL regression transaction/rollback suite (owner/HR, anon/disabled/uninvited, direct DML, preview, quota, idempotency, overlap, edit/cancel, audit) ผ่าน Supabase connector; rollback แล้วไม่พบ fixture entitlements/leave entries ในปี 2096/2097. Two-session harness setup, session A, verification และ cleanup ทำงานสองครั้ง; connector serialize SQL execution ทำให้ session B ได้ `quota_exceeded` ที่ preview หลัง A commit แม้รอ A 15 วินาทีและเริ่ม B หลัง 100ms. ทั้งสองครั้ง cleanup คืน fixture count 0; ยังไม่มีผล race ที่รันพร้อมกันจริง. Browser `/workspace/leave` redirect ไปหน้า login เพราะไม่มี HR session จึงไม่ได้ตรวจฟอร์มจริงหรือทำ mutation; viewport 375px ยังไม่ได้วัด. ไม่มี Vercel CLI หรือสิทธิ์ deploy ที่ยืนยันได้ และไม่ได้ deploy. 5.8–5.9 ยังไม่ปิด.
 
