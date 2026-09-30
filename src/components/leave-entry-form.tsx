@@ -1,0 +1,41 @@
+"use client";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { previewLeaveAction, saveLeaveAction, type LeaveActionState } from "@/app/workspace/leave/actions";
+import styles from "@/app/workspace/workspace.module.css";
+
+type Employee={id:string;employee_code:string;first_name:string;last_name:string;status:string;start_date:string;termination_date:string|null};
+type LeaveType={id:string;name:string;is_active:boolean};
+type Initial={employee_id?:string;leave_type_id?:string;start_date?:string;end_date?:string;unit?:string;reason?:string;entry_id?:string;expected_revision?:string;change_reason?:string;oldDays?:{leave_date:string;days:number;half_period:string|null}[]};
+type Preview={days:{leave_date:string;days:number;half_period:string|null;counts:boolean;reason:string|null}[];balances:{year:number;quota_days:number;used_before:number;requested_days:number;used_after:number;remaining_after:number}[];released_balances?:{leave_type_id:string;year:number;quota_days:number;used_before:number;requested_days:number;used_after:number;remaining_after:number}[];fingerprint:string};
+const blank:LeaveActionState={success:false,message:"",errors:{}};
+export function LeaveEntryForm({employees,types,initial={},editing=false}:{employees:Employee[];types:LeaveType[];initial?:Initial;editing?:boolean}) {
+ const router=useRouter();
+ const [preview,setPreview]=useState<Preview|null>(null);const [previewMessage,setPreviewMessage]=useState("");const [previewPending,setPreviewPending]=useState(false);const [requestKey,setRequestKey]=useState("");const [confirmed,setConfirmed]=useState(false);const [previewAfterConflict,setPreviewAfterConflict]=useState(false);const intent=useRef(0);
+ const [values,setValues]=useState({employee_id:initial.employee_id??"",leave_type_id:initial.leave_type_id??"",start_date:initial.start_date??"",end_date:initial.end_date??"",unit:initial.unit??"full",reason:initial.reason??"",change_reason:initial.change_reason??""});
+ const submitAction=useCallback(async(previous:LeaveActionState,form:FormData)=>{const result=await saveLeaveAction(previous,form);if(result.code==="preview_changed"){setPreview(null);setConfirmed(false);setPreviewMessage("");setPreviewAfterConflict(false);}return result;},[]);
+ const [state,action,pending]=useActionState(submitAction,blank);
+ const disabled=pending||previewPending;
+ useEffect(()=>{if(state.success&&state.id){router.push(`/workspace/leave/${state.id}`);router.refresh();}},[state,router]);
+ function invalidate(){intent.current++;setPreview(null);setConfirmed(false);setPreviewMessage("");setPreviewAfterConflict(false);setPreviewPending(false);}
+ async function runPreview(form:HTMLFormElement){if(!requestKey)setRequestKey(crypto.randomUUID());const token=++intent.current;const data=new FormData(form);data.set("employee_id",String(data.get("employee_id")??""));setPreviewPending(true);setPreviewMessage("");try{const result=await previewLeaveAction(data);if(token!==intent.current)return;if(result.success&&result.preview){setPreview(result.preview as Preview);setPreviewMessage("ตรวจสอบตัวอย่างแล้ว กรุณาตรวจวันที่และยอดคงเหลือก่อนยืนยัน");setPreviewAfterConflict(true);}else setPreviewMessage(result.message||"ตรวจสอบวันลาไม่สำเร็จ");}catch{if(token===intent.current)setPreviewMessage("ระบบตรวจสอบวันลาไม่สำเร็จ กรุณาลองอีกครั้ง");}finally{if(token===intent.current)setPreviewPending(false);}}
+ const currentPreview=state.message.includes("ตัวอย่างใหม่")&&!previewAfterConflict?null:preview;
+ function onFieldChange(e:React.ChangeEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>){const field=e.currentTarget.name==="employee_id_display"?"employee_id":e.currentTarget.name as keyof typeof values;const value=e.currentTarget.value;if(field in values)setValues(previous=>({...previous,[field]:value}));invalidate();setRequestKey(crypto.randomUUID());}
+ return <form action={action} className={`${styles.employeeForm} ${styles.leaveForm}`} onSubmit={e=>{if(!currentPreview||!confirmed){e.preventDefault();setPreviewMessage("กรุณาตรวจตัวอย่างวันลาและทำเครื่องหมายยืนยันก่อนบันทึก");}}}>
+   {initial.entry_id&&<><input type="hidden" name="entry_id" value={initial.entry_id}/><input type="hidden" name="expected_revision" value={initial.expected_revision??""}/></>}
+   <div className={styles.leaveGrid}>
+    <label>พนักงาน<select name={editing?"employee_id_display":"employee_id"} required={!editing} disabled={editing} value={values.employee_id} onChange={onFieldChange}><option value="">เลือกพนักงาน</option>{employees.map(e=><option key={e.id} value={e.id}>{e.employee_code} · {e.first_name} {e.last_name}{e.status!=="active"?" · พ้นสภาพ":""}</option>)}</select>{editing&&<input type="hidden" name="employee_id" value={values.employee_id}/>}</label>
+    <label>ประเภทลา<select name="leave_type_id" required value={values.leave_type_id} onChange={onFieldChange}><option value="">เลือกประเภทลา</option>{types.map(t=><option key={t.id} value={t.id}>{t.name}{!t.is_active?" · ปิดใช้งาน (ประวัติเดิม)":""}</option>)}</select></label>
+    <label>วันที่เริ่มต้น<input type="date" name="start_date" required value={values.start_date} onChange={onFieldChange}/></label><label>วันที่สิ้นสุด<input type="date" name="end_date" required value={values.end_date} onChange={onFieldChange}/></label>
+    <label>หน่วยลา<select name="unit" required value={values.unit} onChange={onFieldChange}><option value="full">เต็มวัน</option><option value="morning">ครึ่งวันเช้า</option><option value="afternoon">ครึ่งวันบ่าย</option></select></label>
+   </div>
+   <label>เหตุผลการลา<textarea name="reason" rows={3} maxLength={500} value={values.reason} onChange={onFieldChange}/></label>
+   {editing&&<label>เหตุผลการแก้ไข<input name="change_reason" required minLength={3} maxLength={500} value={values.change_reason} onChange={onFieldChange}/></label>}
+   <input type="hidden" name="preview_fingerprint" value={currentPreview?.fingerprint??""}/><input type="hidden" name="request_key" value={requestKey}/>
+   <div className={styles.leaveActions}><button type="button" className={styles.secondaryButton} disabled={disabled} onClick={e=>{const form=e.currentTarget.form;if(form)void runPreview(form);}}>ดูตัวอย่างวันลา</button><button type="submit" disabled={disabled||!requestKey||!currentPreview||!confirmed}>{pending?"กำลังบันทึก…":"ยืนยันบันทึกวันลา"}</button></div>
+   {previewMessage&&<p role="status" className={preview&&!confirmed?styles.leaveNotice:""}>{previewMessage}</p>}
+   {currentPreview&&<section className={styles.leavePreview} aria-label="ตัวอย่างวันลา"><h3>วันที่และยอดที่จะบันทึก</h3>{editing&&<><strong>รายการเดิม</strong><ul>{(initial.oldDays??[]).map(day=><li key={day.leave_date}>{day.leave_date} · {day.days} วัน{day.half_period?` · ${day.half_period==="morning"?"ครึ่งเช้า":"ครึ่งบ่าย"}`:""}</li>)}</ul></>}<ul>{currentPreview.days.map(day=><li key={day.leave_date}>{day.leave_date} · {day.days} วัน{day.half_period?` (${day.half_period==="morning"?"ครึ่งเช้า":"ครึ่งบ่าย"})`:""}{!day.counts?` · ไม่นับวันทำงาน (${day.reason??"วันหยุด"})`:""}</li>)}</ul><div className={styles.tableWrap}><table><thead><tr><th>ปี</th><th>โควตา</th><th>ยอดก่อนปรับ</th><th>ปรับรายการนี้</th><th>เหลือหลังบันทึก</th></tr></thead><tbody>{(currentPreview.released_balances??[]).map(b=><tr key={`old:${b.leave_type_id}:${b.year}`}><td>{b.year} · {types.find(t=>t.id===b.leave_type_id)?.name??"ประเภทเดิม"} · ก่อนคืนยอด</td><td>{b.quota_days}</td><td>{b.used_before}</td><td>{b.requested_days}</td><td>{b.remaining_after}</td></tr>)}{currentPreview.balances.map(b=><tr key={`new:${b.year}`}><td>{b.year} · {types.find(t=>t.id===values.leave_type_id)?.name??"ประเภทลา"} · หลังคืนยอดเดิม</td><td>{b.quota_days}</td><td>{b.used_before}</td><td>{b.requested_days}</td><td>{b.remaining_after}</td></tr>)}</tbody></table></div><label className={styles.leaveConfirm}><input name="confirm_preview" type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/> ฉันตรวจสอบวันที่และยอดคงเหลือแล้ว</label></section>}
+   {state.message&&!state.success&&<p role="alert" className={styles.formError}>{state.message}</p>}
+   {Object.entries(state.errors).map(([key,msgs])=><p key={key} className={styles.formError}>{msgs.join(" · ")}</p>)}
+ </form>;
+}

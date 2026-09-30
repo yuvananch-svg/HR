@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { readAll } from "@/lib/data";
 import { requireStaff } from "@/lib/auth";
 import { saveLeaveTypeAction, saveLeavePolicyAction, copyLeavePolicyAction, generateEntitlementsAction, saveHolidayAction, deleteHolidayAction } from "../settings-actions";
@@ -49,21 +50,21 @@ export default async function Section({ params, searchParams }: { params: Promis
     </>;
   }
   const [entriesResult, entitlements, days] = await Promise.all([
-    client.from("leave_entries").select("id,start_date,end_date,status,employees(first_name,last_name),leave_types(name)").lte("start_date",year+"-12-31").gte("end_date",year+"-01-01").order("start_date", { ascending: false }).limit(100),
+    client.from("leave_entries").select("id,start_date,end_date,status,employees(id,first_name,last_name),leave_types(name)").lte("start_date",year+"-12-31").gte("end_date",year+"-01-01").order("start_date", { ascending: false }).limit(100),
     readAll((from,to)=>client.from("leave_entitlements").select("id,employee_id,leave_type_id,year,quota_days,employees(first_name,last_name),leave_types(name)").eq("year",year).order("employee_id").order("id").range(from,to)),
     readAll((from,to) => client.from("leave_entry_days").select("leave_date,days,leave_entries!inner(employee_id,leave_type_id,status)").gte("leave_date",year+"-01-01").lte("leave_date",year+"-12-31").order("id").range(from,to)),
   ]);
   if (entriesResult.error) throw new Error("โหลดวันลาไม่ได้");
   const typedDays=days as unknown as LeaveDay[];
-  return <><h1>วันลา</h1><p className={styles.subtitle}>ยอดสิทธิ์ปี {year} และรายการล่าสุด 100 รายการ</p><form method="get" className={styles.yearPicker}><label>ปี ค.ศ. <input type="number" name="year" min="1900" max="9999" defaultValue={year}/></label><button type="submit">ดูปี</button></form>
+  return <><div className={styles.employeeHeader}><div><h1>วันลา</h1><p className={styles.subtitle}>ยอดสิทธิ์ปี {year} และรายการล่าสุด 100 รายการ</p></div><Link href="/workspace/leave" className={styles.primaryLink}>บันทึกวันลา</Link></div><form method="get" className={styles.yearPicker}><label>ปี ค.ศ. <input type="number" name="year" min="1900" max="9999" defaultValue={year}/></label><button type="submit">ดูปี</button></form>
     <section className={styles.panel}><h2>ยอดคงเหลือ</h2>{!entitlements.length ? <p>ยังไม่ได้กำหนดสิทธิ์วันลา</p> : <div className={styles.tableWrap}><table><thead><tr><th>พนักงาน</th><th>ประเภท</th><th>โควตา</th><th>ใช้แล้ว</th><th>คงเหลือ</th></tr></thead><tbody>{entitlements.map(row => {
       const balance = remainingDays(row as Entitlement, typedDays);
       const employee = row.employees as unknown as {first_name:string;last_name:string};
       return <tr key={row.employee_id+row.leave_type_id}><td>{employee?.first_name} {employee?.last_name}</td><td>{(row.leave_types as unknown as {name:string})?.name}</td><td>{balance.quota}</td><td>{balance.used}</td><td>{balance.remaining}</td></tr>;
     })}</tbody></table></div>}</section>
     <section className={styles.panel}><h2>ประวัติวันลา</h2>{!entriesResult.data?.length ? <p>ยังไม่มีรายการลา</p> : <ul>{entriesResult.data.map(row => {
-      const employee = row.employees as unknown as {first_name:string;last_name:string};
-      return <li key={row.id}>{employee?.first_name} {employee?.last_name} · {(row.leave_types as unknown as {name:string})?.name} · {row.start_date} ถึง {row.end_date} · {row.status === "cancelled" ? "ยกเลิก" : "บันทึกแล้ว"}</li>;
+      const emp= row.employees as unknown as {id:string;first_name:string;last_name:string};
+      return <li key={row.id}><Link href={`/workspace/leave/${row.id}`}>{emp?.first_name} {emp?.last_name} · {(row.leave_types as unknown as {name:string})?.name} · {row.start_date} ถึง {row.end_date} · {row.status === "cancelled" ? "ยกเลิก" : "บันทึกแล้ว"}</Link></li>;
     })}</ul>}</section>
   </>;
 }

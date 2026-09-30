@@ -1,0 +1,17 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 5 mobile QA</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:12px;font:14px system-ui,sans-serif;color:#231f20;background:#f6f3f3}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 auto 10px;max-width:430px}.toolbar input{flex:1;min-width:150px;padding:8px;border:1px solid #aaa;border-radius:6px}.toolbar button{padding:8px 12px;border:0;border-radius:6px;background:#8f152c;color:white}#sizes{max-width:430px;margin:0 auto 8px;color:#555;font-size:12px}iframe{display:block;width:min(100%,375px);height:900px;margin:auto;border:0;outline:1px solid #aaa;background:#fff;border-radius:8px}
+</style>
+<div class="toolbar"><label for="entry">Entry UUID (blank opens /workspace/leave)</label><input id="entry" placeholder="optional UUID"><button id="open">Open</button></div>
+<div id="sizes" aria-live="polite">Waiting for page…</div>
+<iframe id="app" title="HR leave page mobile viewport" width="375" height="900"></iframe>
+<script>
+const frame=document.querySelector('#app'),field=document.querySelector('#entry'),out=document.querySelector('#sizes');
+function load(){const id=field.value.trim();frame.src=id?'/workspace/leave/'+encodeURIComponent(id):'/workspace/leave';}
+document.querySelector('#open').addEventListener('click',load);load();
+function measure(){try{const d=frame.contentDocument;if(!d)return;out.textContent=`iframe ${frame.clientWidth}px · document ${d.documentElement.scrollWidth}px · body ${d.body?.scrollWidth??0}px`; }catch{out.textContent='Page is loading or same-origin inspection is unavailable.'}}
+frame.addEventListener('load',()=>{measure();try{const d=frame.contentDocument;new ResizeObserver(measure).observe(d.documentElement);}catch{}});window.addEventListener('resize',measure);
+</script>
