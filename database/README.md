@@ -4,13 +4,13 @@ Applied on 2026-09-30 to Supabase HRM (kedohmbtpegupndldkex).
 
 ## Phase 2 status
 
-Database structure and RLS have been applied and verified. Phase 2 is NOT complete: the Next.js app now uses Supabase Auth and protected database reads. Two owner emails are enrolled privately, but their Auth accounts must be activated by first-time password setup and email verification. Production Auth redirect and email delivery still need validation.
+Phase 2 is complete by user acceptance on 2026-09-30. Database structure, RLS, Supabase Auth integration and production redirect URLs are in place. The first owner has a verified active owner membership; the user reports successful login, logout and password recovery on the production app. Opening an additional account (including the second owner) has not been tested. HR account activation and delivery to recipients outside the Supabase organization team remain follow-ups; custom SMTP is still needed for that delivery path. These follow-ups do not block phase 3 under the user's instruction.
 
 ## Structure
 
 12 public tables: app_users, employees, identity_documents, bank_accounts, emergency_contacts, leave_types, leave_policy_defaults, leave_entitlements, holidays, leave_entries, leave_entry_days, audit_events.
 
-All tables have RLS enabled and explicit grants. Active owner and HR users share organization-wide employee data. app_users is an administrator-managed allowlist: users can read only their own active membership and cannot grant themselves access. No employee self-service or signup authorization is implemented.
+All tables have RLS enabled and explicit grants. Active owner and HR users share organization-wide employee data. app_users is an administrator-managed allowlist: users can read only their own active membership and cannot grant themselves access. There is no employee self-service. Invited owner/HR signup authorization is implemented by the private allowlist and Auth triggers.
 
 Employee and policy tables permit authorized INSERT/UPDATE. DELETE is not granted; employment status and leave type activation retain history. Leave tables and audit_events are read-only to clients until phase 5 implements transactional validation and audit writing. There are no leave RPCs, automatic audit triggers, balance views or annual quota initialization yet. Changes to quotas below already-used days must be checked when phase 5 is implemented.
 
@@ -28,7 +28,7 @@ hr_foundation.sql preserves the applied SQL. Remote migration history contains h
 
 ## Remaining work
 
-Validate Auth URLs for Vercel, owner activation, email delivery, real login/logout and password recovery. Server route authorization and database RLS are implemented and tested. Then continue phases 3–7.
+Proceed with the phase 3 employee registry subtasks in the root README. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
 
 ## Invited accounts
 
