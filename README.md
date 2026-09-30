@@ -1,6 +1,6 @@
 # HR — ระบบข้อมูลพนักงานและวันลา
 
-เว็บแอปภายในองค์กรสำหรับเจ้าของธุรกิจและฝ่าย HR เพื่อเก็บประวัติพนักงาน จัดการสิทธิ์วันลา และดูยอดคงเหลือที่ตรวจสอบย้อนหลังได้ เอกสารนี้เป็น **ข้อกำหนดและแผนพัฒนา** พร้อมผลดำเนินงานข้อ 1–3 และแผนงานย่อยสำหรับข้อ 4
+เว็บแอปภายในองค์กรสำหรับเจ้าของธุรกิจและฝ่าย HR เพื่อเก็บประวัติพนักงาน จัดการสิทธิ์วันลา และดูยอดคงเหลือที่ตรวจสอบย้อนหลังได้ เอกสารนี้เป็น **ข้อกำหนดและแผนพัฒนา** พร้อมผลดำเนินงานข้อ 1–4 และแผนงานย่อยสำหรับข้อ 5–7
 
 **เปิดตัวอย่างเว็บ:** [HR บน Vercel](https://hr-lac-theta.vercel.app/) → กด “ดูตัวอย่างหน้าจอ” เพื่อดูโครงหน้าแดชบอร์ด หน้าเข้าสู่ระบบใช้ Supabase Auth แล้ว และ `/workspace` อ่านข้อมูลจากฐานข้อมูลหลังตรวจสิทธิ์ ส่วน `/preview` ยังคงเป็นตัวอย่างสาธารณะไม่มีข้อมูลจริง ข้อ 2 สำเร็จตามการรับงานของผู้ใช้แล้ว โดยเก็บการทดสอบเปิดบัญชีเพิ่มเติมไว้เป็นงานติดตาม
 
@@ -95,7 +95,7 @@
 
 ## แผนเขียนโค้ดตามลำดับ
 
-ทุกช่วงควรจบด้วยสิ่งที่ทดลองได้จริง; ข้อ 1–3 สำเร็จแล้ว ข้อ 3 ผ่านการตรวจรับครบ 9/9 งานย่อย (100%) และผู้ใช้ยืนยันให้ปิดงานเมื่อ 2026-09-30 ข้อ 4 implementation 4.1–4.7 เสร็จและรอ database integration/concurrency verification กับ browser QA; checklist ปิดรับงานอยู่ด้านล่าง ส่วนข้อ 5–7 ยังไม่ครบ การเปิดบัญชีเพิ่มเติมและ SMTP ของข้อ 2 ยังคงเป็นงานติดตาม
+ทุกช่วงควรจบด้วยสิ่งที่ทดลองได้จริง; ข้อ 1–3 สำเร็จแล้ว ข้อ 3 ผ่านการตรวจรับครบ 9/9 งานย่อย (100%) และผู้ใช้ยืนยันให้ปิดงานเมื่อ 2026-09-30 ข้อ 4 ผ่านครบ 9/9 งานย่อย (100%) รวม integration/concurrency/browser QA และ cleanup fixtures; หลักฐานอยู่ใน checklist ด้านล่าง ส่วนข้อ 5–7 ยังไม่ครบ การเปิดบัญชีเพิ่มเติมและ SMTP ของข้อ 2 ยังคงเป็นงานติดตาม
 
 1. **โครงเว็บและดีไซน์:** สร้าง Next.js/TypeScript หน้าเข้าสู่ระบบ โครงหน้า ธีมขาว–แดง และรูปแบบมือถือ; ตรวจสถานะว่าง โหลด และผิดพลาด
 2. **ฐานข้อมูลและสิทธิ์:** สร้าง migration ของตาราง ความสัมพันธ์ ข้อจำกัด index และ RLS; เชื่อม Supabase Auth; ทดสอบบัญชีที่มี/ไม่มีสิทธิ์
@@ -191,7 +191,7 @@
 
 ### แผนงานย่อยข้อ 4 — นโยบายวันลา
 
-**สถานะ: implementation 4.1–4.7 เสร็จและ SQL integration regression ผ่าน; รอ concurrency test และ browser QA (0/9 งานย่อยปิดรับงาน)** migration ถูก apply กับ Supabase HRM และ rollback SQL regression ผ่านตามผลตรวจของ root; ไม่รวมการอนุมัติ production rollout จนกว่า QA ที่เหลือจะผ่าน เป้าหมายคือเจ้าของและ HR จัดการประเภทลา โควตามาตรฐานรายปี สิทธิ์รายคน และวันหยุดบนเว็บจริงได้ โดยไม่สร้างนโยบายบริษัทสมมติ
+**สถานะ: ข้อ 4 เสร็จครบ 9/9 งานย่อย (100%)** migration, SQL regression, two-session concurrency, permission checks, desktop/mobile browser QA, deploy และ fixture cleanup ผ่านแล้ว เป้าหมายคือเจ้าของและ HR จัดการประเภทลา โควตามาตรฐานรายปี สิทธิ์รายคน และวันหยุดบนเว็บจริงได้ โดยไม่สร้างนโยบายบริษัทสมมติ
 
 | งานย่อย | สิ่งที่จะทำ | เกณฑ์รับงาน |
 | --- | --- | --- |
@@ -203,21 +203,21 @@
 | 4.6 ปฏิทินวันหยุด | เพิ่ม/แก้ไขวันที่และชื่อวันหยุดราชการ/บริษัท กรองตามปี; กำหนดเส้นทางลบวันหยุดพร้อมยืนยันและตรวจสิทธิ์หากต้องเพิ่ม grants/RPC | ไม่รับวันที่ซ้ำหรือชื่อว่าง; ใช้ชนิด date; ลบหรือย้ายวันหยุดไม่แก้ leave_entry_days ของรายการเดิม; แสดงผลกระทบต่อการคำนวณรายการใหม่ให้ชัด |
 | 4.7 รอบปีและการเชื่อมข้อมูล | เตรียมนโยบาย/สิทธิ์ปีถัดไปด้วย flow ข้อ 4.3–4.4; เชื่อมหน้าตั้งค่า รายละเอียดพนักงาน และหน้าวันลาให้ใช้ข้อมูลเดียวกัน | ปีใหม่ใช้โควตาของปีนั้น ไม่ยกยอดเก่า; override มีผลเฉพาะปีที่ระบุ; ดูปีก่อนได้; ถ้ายังไม่ตั้งนโยบาย/สิทธิ์ให้แจ้งสถานะว่าง; ตัวเลขหลังแก้ไขตรงกันทุกหน้าที่เกี่ยวข้อง |
 | 4.8 สิทธิ์และความถูกต้องของคำสั่งเขียน | ตรวจ owner/HR ที่ active และ RLS ทุกคำสั่ง รวม URL/API โดยตรง; ใช้ revision/locking สำหรับการแก้ไข; ตรวจโควตาร่วมกับรายการลาที่บันทึกจริง | anon, uninvited และ disabled อ่าน/เขียนไม่ได้; owner/HR ทำได้เท่ากัน; ไม่มี service-role ในเว็บ; ผู้ใช้สองคนแก้พร้อมกันไม่เขียนทับเงียบ; ข้อ 5 ต้องใช้กลไกล็อกเดียวกันเพื่อรักษากติกายอด |
-| 4.9 ทดสอบ ตรวจหน้าจอ และส่งขึ้นเว็บจริง | SQL regression ผ่าน; คงเหลือ two-session concurrency check, tests/lint/build และ browser QA เดสก์ท็อป/มือถือ; บันทึกผลตรวจและสถานะ deploy | ผ่านกรณีซ้ำ โควตา 0/0.5 ข้อมูลผิด ยอดใช้แล้ว rollback การกดซ้ำ/พร้อมกัน สิทธิ์ และเปลี่ยนปี; production ใช้งานได้จริง; cleanup ข้อมูลทดสอบ; ระบุว่า QA มือถือใช้ viewport หรืออุปกรณ์จริง |
+| 4.9 ทดสอบ ตรวจหน้าจอ และส่งขึ้นเว็บจริง | ทดสอบครบประเภท → มาตรฐาน → สร้างสิทธิ์ → ปรับรายคน → วันหยุด → ปีใหม่; SQL regression, tests ที่เกี่ยวข้อง, lint/build และ browser QA เดสก์ท็อป/มือถือ; deploy และอัปเดต README | ผ่านกรณีซ้ำ โควตา 0/0.5 ข้อมูลผิด ยอดใช้แล้ว rollback การกดซ้ำ/พร้อมกัน สิทธิ์ และเปลี่ยนปี; production ใช้งานได้จริง; cleanup ข้อมูลทดสอบ; ระบุว่า QA มือถือใช้ viewport หรืออุปกรณ์จริง |
 
-#### Checklist implementation ข้อ 4 (ยังไม่ใช่การปิดรับงาน)
+#### Checklist ปิดรับงานข้อ 4
 
-- [ ] **4.1** กติกา แบบข้อมูล validation และ migration ที่จำเป็น — implementation เสร็จ; migration applied และ rollback SQL regression ผ่าน
-- [ ] **4.2** จัดการประเภทวันลา — implementation และ SQL regression ผ่าน
-- [ ] **4.3** จัดการโควตามาตรฐานรายปี — implementation และ SQL regression ผ่าน
-- [ ] **4.4** สร้างสิทธิ์พนักงานจากนโยบาย — implementation/SQL regression ผ่าน; รอ two-session concurrency check
-- [ ] **4.5** ปรับโควตารายคนและคืนค่ามาตรฐาน — implementation และ SQL regression ผ่าน
-- [ ] **4.6** จัดการปฏิทินวันหยุด — implementation และ SQL regression ผ่าน
-- [ ] **4.7** รอบปีและเชื่อมข้อมูลทุกหน้าที่เกี่ยวข้อง — implementation และ SQL regression ผ่าน
-- [ ] **4.8** ตรวจสิทธิ์และคำสั่งเขียนที่ฐานข้อมูล
-- [ ] **4.9** ทดสอบ ตรวจหน้าจอ deploy และบันทึกหลักฐาน
+- [x] **4.1** กติกา แบบข้อมูล validation และ migration ที่จำเป็น — implementation เสร็จ; migration applied และ rollback SQL regression ผ่าน
+- [x] **4.2** จัดการประเภทวันลา — implementation และ SQL regression ผ่าน
+- [x] **4.3** จัดการโควตามาตรฐานรายปี — implementation และ SQL regression ผ่าน
+- [x] **4.4** สร้างสิทธิ์พนักงานจากนโยบาย — implementation, SQL regression และ two-session generation concurrency ผ่าน
+- [x] **4.5** ปรับโควตารายคนและคืนค่ามาตรฐาน — SQL regression ผ่าน; live browser override/cancel/reason and reset-to-standard ผ่าน; standard edit คง override เดิม
+- [x] **4.6** จัดการปฏิทินวันหยุด — SQL regression ผ่าน; live browser create/edit ผ่าน
+- [x] **4.7** รอบปีและเชื่อมข้อมูลทุกหน้าที่เกี่ยวข้อง — SQL regression ผ่าน; live browser 2026/2027 policy, copy preview, leave balances and detail consistency ผ่าน
+- [x] **4.8** ตรวจสิทธิ์และคำสั่งเขียนที่ฐานข้อมูล — backend SQL checks, advisory review, random uninvited-sub check และ owner browser QA ผ่าน
+- [x] **4.9** ทดสอบ ตรวจหน้าจอ deploy และบันทึกหลักฐาน — tests/lint/build, production browser QA บน desktop และ CSS iframe viewport 375×900, deploy, evidence และ cleanup fixtures ผ่าน
 
-**ผลตรวจที่มี:** Supabase migration applied และ rollback SQL regression ผ่านตามผลตรวจ root; Vitest 39/39 ผ่าน; ESLint ผ่าน; TypeScript `tsc --noEmit` ผ่าน; `next build` ผ่านเมื่อรันนอก sandbox. Two-session concurrency check และ browser QA ยังรอผลตรวจ
+**ผลตรวจที่มี:** Supabase migration applied และ rollback SQL regression ผ่านตามผลตรวจ root; Vitest 39/39 ผ่าน; ESLint ผ่าน; TypeScript `tsc --noEmit` ผ่าน; `next build` ผ่านเมื่อรันนอก sandbox. Two-session concurrency ผ่าน: generation session A ได้ 0 และ B ได้ 2 (รวม 2 สิทธิ์); override session A สำเร็จที่โควตา 2 วันและ revision ใหม่ ส่วน B ถูกปฏิเสธด้วย `P0001 revision_conflict`. Final cleanup แบบ atomic และตรวจ UUID/ตัวตน fixture ก่อนลบผ่าน; fixtures คงเหลือ 0 รายการ โดย baseline employee คงเดิม 1 คน และ leave_types/defaults/entitlements/holidays/leave_entries คงเหลืออย่างละ 0 รายการ; Advisors ไม่พบประเด็นใหม่ (ยังมี leaked-password warning และ unused-index informational 7 รายการเดิม). Commit `d64275c47dd5770e925688181ee2ec52b0b84954` deploy บน Vercel สำเร็จ. Live owner-browser QA ผ่านการเพิ่มประเภทและ normalized duplicate พร้อมข้อความไทย, missing-default warning และ disabled generation; บันทึก quota 0 และ 0.5; preview/copy ปี 2027 แสดง confirm และคงค่าที่มีอยู่. Quota override 0.5→1.5 ผ่าน โดย cancel คงค่าเดิมและ accept บันทึก source/reason; แก้มาตรฐาน 2026 เป็น 1 แล้ว override 1.5 คงเดิม; reset หลังยืนยันคืน policy quota 1. Holiday create/edit ผ่าน. ปี 2026 policy 1 เทียบปี 2027 existing 0.5; copy disabled เมื่อมีค่าเดิมและ generate ปี 2027 ได้ 2; หน้า leave/detail แสดง 2026 quota 1/used 0/remaining 1 และ 2027 quota 0.5/remaining 0.5. Random uninvited `sub` ถูกปฏิเสธด้วย `42501` โดยไม่อ่านข้อมูลพนักงาน. Mobile QA หลัง deploy commit `1f2ea98` ผ่านด้วย iframe viewport 375×900 (พื้นที่เนื้อหา 360px หลัง scrollbar): settings ที่มีชื่อประเภท 106 ตัวอักษร, employee detail รวมถึงเปิดฟอร์ม override และกรอก quota 1.5/reason ก่อน cancel, และ leave page วัด client/document/body ได้ 360/360/360 ทุกหน้า; ตรวจ screenshot แล้วไม่พบ horizontal overflow. การทดสอบมือถือใช้ CSS iframe viewport 375×900 ไม่ใช่อุปกรณ์โทรศัพท์จริง; fixture cleanup รอบสุดท้ายผ่านแล้ว; ตรวจหน้า settings บน production หลัง cleanup ยืนยันว่ามีพนักงาน active 1 คน ไม่มีประเภทลา/ค่า default/วันหยุด และปุ่มสร้างสิทธิ์ถูกปิดตามสถานะว่าง จึงปิดข้อ 4.9
 
 **ลำดับลงมือ:** 4.1 → 4.2 → 4.3 → 4.4 → 4.5 → 4.6 → 4.7 → 4.9 โดยทำข้อ 4.8 ควบคู่กับทุกคำสั่งอ่าน/เขียนตั้งแต่เริ่ม ไม่เลื่อนการตรวจสิทธิ์ไปท้ายงาน
 
@@ -227,7 +227,7 @@
 
 **ขอบเขต:** ข้อ 4 จัดการนโยบายและสิทธิ์ ไม่บันทึก/แก้ไข/ยกเลิกวันลา ไม่ทำขั้นอนุมัติ และไม่เพิ่มบัญชีพนักงาน ธุรกรรมการลาและ audit ของรายการลาเป็นข้อ 5 ส่วนแดชบอร์ดและตัวกรองประวัติเต็มรูปแบบเป็นข้อ 6
 
-**เกณฑ์ปิดข้อ 4:** เจ้าของ/HR จัดการประเภทลา มาตรฐานรายปี สิทธิ์รายคน และวันหยุดบนเว็บจริงได้; รอบปีถูกต้อง; ไม่เขียนทับสิทธิ์เดิมโดยเงียบ; ยอดและประวัติเดิมไม่เสีย; สิทธิ์และการบันทึกพร้อมกันผ่านการทดสอบ ก่อนติ๊กเสร็จต้องบันทึก commit/PR ผลทดสอบ และผลตรวจเว็บจริง
+**เกณฑ์ปิดข้อ 4:** ผ่านครบแล้ว — เจ้าของ/HR จัดการประเภทลา มาตรฐานรายปี สิทธิ์รายคน และวันหยุดบนเว็บจริงได้; รอบปีถูกต้อง; ไม่เขียนทับสิทธิ์เดิมโดยเงียบ; ยอดและประวัติเดิมไม่เสีย; สิทธิ์และการบันทึกพร้อมกันผ่านการทดสอบ; บันทึก commit, ผลทดสอบ และผลตรวจเว็บจริงไว้ด้านบน
 
 ### เกณฑ์รับงานรุ่นแรก
 

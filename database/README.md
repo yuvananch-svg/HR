@@ -24,11 +24,11 @@ Security Advisor: no findings after restricting pre-existing public.rls_auto_ena
 
 ## Reproducibility
 
-hr_foundation.sql preserves the applied SQL. Remote migration history contains hr_foundation_tables_and_rls, restrict_internal_rls_event_trigger_execution, and the phase4 leave-policy migration. The phase4 rollback regression passed against the initialized project on 2026-09-30. `tests/phase4_concurrency/` contains an operator-run two-session check; do not run its setup unless the target project has no other active employees or leave types. The schema SQL is for a fresh database, not for rerunning against this initialized project.
+hr_foundation.sql preserves the applied SQL. Remote migration history contains hr_foundation_tables_and_rls, restrict_internal_rls_event_trigger_execution, and the phase4 leave-policy migration. The phase4 rollback regression and two-session concurrency check passed against the initialized project on 2026-09-30: concurrent generation returned 0 and 2, concurrent overrides produced one save and one `P0001 revision_conflict`, and scoped cleanup left zero fixture rows while preserving baseline data. `tests/phase4_concurrency/` documents the operator-run check; setup preserves existing employees but requires no other active leave types and no existing 2098 policy/entitlement rows. The schema SQL is for a fresh database, not for rerunning against this initialized project.
 
 ## Remaining work
 
-Complete phase 4 database integration/concurrency checks and browser QA, then proceed with phase 5 leave-entry mutations. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
+Phase 4 is complete on 2026-09-30: database integration, two-session concurrency checks, desktop browser QA, and mobile QA using a 375×900 CSS iframe viewport passed. Final guarded cleanup removed all persistent QA fixtures while preserving the baseline employee; final counts are employees 1, leave_types 0, policy defaults 0, entitlements 0, holidays 0, and leave_entries 0. Proceed with phase 5 leave-entry mutations. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
 
 ## Invited accounts
 
