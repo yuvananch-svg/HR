@@ -5,16 +5,8 @@ import { bangkokToday, remainingDays, type LeaveDay, type Entitlement } from "@/
 import styles from "../workspace.module.css";
 export default async function Section({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params;
-  if (!["employees", "leave", "settings"].includes(section)) notFound();
+  if (!["leave", "settings"].includes(section)) notFound();
   const { client } = await requireStaff();
-  if (section === "employees") {
-    const { data, error } = await client.from("employees").select("id,employee_code,first_name,last_name,department,position,start_date,status").order("employee_code");
-    if (error) throw new Error("โหลดพนักงานไม่ได้");
-    return <><h1>พนักงาน</h1><p className={styles.subtitle}>ทะเบียนพนักงานขององค์กร</p><section className={styles.panel}>
-      {!data?.length ? <p>ยังไม่มีข้อมูลพนักงาน</p> : <div className={styles.tableWrap}><table><thead><tr><th>รหัส</th><th>ชื่อ–นามสกุล</th><th>แผนก</th><th>ตำแหน่ง</th><th>วันเริ่มงาน</th><th>สถานะ</th></tr></thead>
-        <tbody>{data.map(row => <tr key={row.id}><td>{row.employee_code}</td><td>{row.first_name} {row.last_name}</td><td>{row.department ?? "—"}</td><td>{row.position ?? "—"}</td><td>{row.start_date}</td><td>{row.status === "active" ? "ทำงานอยู่" : "พ้นสภาพ"}</td></tr>)}</tbody></table></div>}
-    </section></>;
-  }
   if (section === "settings") {
     const results = await Promise.all([
       client.from("leave_types").select("id,name,is_active").order("sort_order"),
