@@ -16,4 +16,4 @@
 .resetForm { display:inline-block; margin:8px; }
 .resetForm button { background:#fff; border:1px solid #e7b8c1; color:var(--red-dark); }
 .yearPicker { display:flex; gap:10px; align-items:end; }
-@media(max-width:700px) { .policyForm label { min-width:0; max-width:100%; }.policyForm input:not([type=checkbox]),.yearPicker input { box-sizing:border-box; width:min(100%,280px); min-width:0; }.holidayRow { flex-wrap:wrap; align-items:flex-start; padding:8px 0; }.holidayRow > form:first-child { flex-basis:100%; } }
+@media(max-width:700px) { .policyForm,.policyForm > * { min-width:0; max-width:100%; }.policyForm label { min-width:0; max-width:100%; }.policyForm strong { flex:1 1 100%; overflow-wrap:anywhere; }.policyForm p,.panel p,.panel th,.entitlementCard,.entitlementCard p { overflow-wrap:anywhere; }.panel th { white-space:normal; }.entitlementCard { box-sizing:border-box; }.policyForm input:not([type=checkbox]),.yearPicker input { box-sizing:border-box; width:min(100%,280px); min-width:0; }.holidayRow { flex-wrap:wrap; align-items:flex-start; padding:8px 0; }.holidayRow > form:first-child { flex-basis:100%; } }
