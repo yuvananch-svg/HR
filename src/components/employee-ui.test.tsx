@@ -4,7 +4,8 @@ import { RevealSensitive } from "./reveal-sensitive";
 import { EmployeeGeneralForm } from "./employee-general-form";
 import { EmployeeSubmit } from "./employee-submit";
 import { RelatedForm } from "./employee-related";
-import { saveEmergencyContactAction, updateEmployeeAction } from "@/app/workspace/employees/actions";
+import { EmployeeSensitiveControls } from "./employee-sensitive-controls";
+import { revealSensitiveAction, saveEmergencyContactAction, updateEmployeeAction } from "@/app/workspace/employees/actions";
 import type { EmployeeRow } from "@/lib/employees";
 
 vi.mock("@/app/workspace/employees/actions", () => ({
@@ -23,6 +24,22 @@ describe("employee UI", () => {
     expect(screen.queryByText("001234567890")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "เปิดเผยเลขบัญชี" }));
     expect(await screen.findByText("001234567890")).toBeInTheDocument();
+  });
+
+  it("drops a revealed secret and keeps one reveal control when the row revision changes", async () => {
+    vi.mocked(revealSensitiveAction)
+      .mockResolvedValueOnce({success:true,value:"OLDSECRET123",message:""})
+      .mockResolvedValueOnce({success:true,value:"NEWSECRET456",message:""});
+    const row = {id:"doc-1",updated_at:"revision-1",document_type:"Other",document_number:null,issuing_country:"TH",expires_on:null};
+    const view = render(<EmployeeSensitiveControls employeeId="employee-1" employeeUpdatedAt="employee-r1" section="document" row={row} label="เลขเอกสาร" />);
+    fireEvent.click(screen.getByRole("button",{name:"เปิดเผยเลขเอกสาร"}));
+    expect(await screen.findByText("OLDSECRET123")).toBeInTheDocument();
+    const updatedRow = {...row,updated_at:"revision-2"};
+    view.rerender(<EmployeeSensitiveControls employeeId="employee-1" employeeUpdatedAt="employee-r2" section="document" row={updatedRow} label="เลขเอกสาร" />);
+    expect(screen.queryByText("OLDSECRET123")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button",{name:"เปิดเผยเลขเอกสาร"})).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button",{name:"เปิดเผยเลขเอกสาร"}));
+    expect(await screen.findByText("NEWSECRET456")).toBeInTheDocument();
   });
 
   it("labels the required general employee fields", () => {
