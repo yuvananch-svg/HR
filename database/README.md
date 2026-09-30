@@ -12,7 +12,7 @@ Phase 2 is complete by user acceptance on 2026-09-30. Database structure, RLS, S
 
 All tables have RLS enabled and explicit grants. Active owner and HR users share organization-wide employee data. app_users is an administrator-managed allowlist: users can read only their own active membership and cannot grant themselves access. There is no employee self-service. Invited owner/HR signup authorization is implemented by the private allowlist and Auth triggers.
 
-Employee and policy tables permit authorized INSERT/UPDATE. DELETE is not granted; employment status and leave type activation retain history. Leave tables and audit_events are read-only to clients until phase 5 implements transactional validation and audit writing. There are no leave RPCs, automatic audit triggers, balance views or annual quota initialization yet. Changes to quotas below already-used days must be checked when phase 5 is implemented.
+Employee registry uses RLS-protected table writes and scoped RPCs. Phase 4 leave policy tables are read-only to direct client DML and writable through authenticated, active owner/HR RPCs with row revisions and server-side validation. Policy generation locks the selected year and each employee/type/year entitlement; overrides and resets use the same year-then-entitlement lock order and cannot go below used days. Holiday edits preserve recorded leave-entry days. Leave tables and audit_events remain read-only to clients until phase 5 implements transactional leave mutations and audit writing. Phase 5 must acquire the selected policy-year shared lock, then the employee/type/year entitlement lock, and must not write policy or entitlement tables directly.
 
 No company leave quotas, holidays, personal data or permanent test accounts were inserted. Dates use date and timestamps use timestamptz; application calendar logic must use Asia/Bangkok and Gregorian years. Saturday/Sunday exclusion remains the README policy for the future leave calculation.
 
@@ -24,11 +24,11 @@ Security Advisor: no findings after restricting pre-existing public.rls_auto_ena
 
 ## Reproducibility
 
-hr_foundation.sql preserves the applied SQL. Remote migration history contains hr_foundation_tables_and_rls and restrict_internal_rls_event_trigger_execution. The schema SQL is for a fresh database, not for rerunning against this initialized project.
+hr_foundation.sql preserves the applied SQL. Remote migration history contains hr_foundation_tables_and_rls, restrict_internal_rls_event_trigger_execution, and the phase4 leave-policy migration. The phase4 rollback regression passed against the initialized project on 2026-09-30. `tests/phase4_concurrency/` contains an operator-run two-session check; do not run its setup unless the target project has no other active employees or leave types. The schema SQL is for a fresh database, not for rerunning against this initialized project.
 
 ## Remaining work
 
-Proceed with the phase 3 employee registry subtasks in the root README. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
+Complete phase 4 database integration/concurrency checks and browser QA, then proceed with phase 5 leave-entry mutations. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
 
 ## Invited accounts
 
