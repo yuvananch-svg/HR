@@ -4,7 +4,8 @@ begin;
 do $$
 declare o uuid:=gen_random_uuid(); h uuid:=gen_random_uuid(); d uuid:=gen_random_uuid(); u uuid:=gen_random_uuid();
 begin
- insert into auth.users(id) values(o),(h),(d),(u);
+ insert into hr_private.account_invites(email,role) values(o::text||'@example.invalid','owner'),(h::text||'@example.invalid','hr'),(d::text||'@example.invalid','hr'),(u::text||'@example.invalid','hr');
+ insert into auth.users(id,email) values(o,o::text||'@example.invalid'),(h,h::text||'@example.invalid'),(d,d::text||'@example.invalid'),(u,u::text||'@example.invalid');
  insert into public.app_users(id,role,is_active) values(o,'owner',true),(h,'hr',true),(d,'hr',false);
  perform set_config('hr.test_owner',o::text,true); perform set_config('hr.test_hr',h::text,true);
  perform set_config('hr.test_disabled',d::text,true); perform set_config('hr.test_unknown',u::text,true);

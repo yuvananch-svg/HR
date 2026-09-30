@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AuthNotice } from "@/components/auth-notice";
+import { LoginForm } from "@/components/login-form";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -29,19 +32,8 @@ export default function LoginPage() {
             <p>ลงชื่อเข้าใช้เพื่อจัดการข้อมูลบุคลากร</p>
           </div>
 
-          <div className={styles.notice} role="status">
-            <span className={styles.noticeIcon} aria-hidden="true">i</span>
-            <p><strong>ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน</strong><br />หน้านี้เป็นโครงหน้าจอ การเข้าสู่ระบบจะเปิดใช้หลังเชื่อมต่อ Supabase Auth</p>
-          </div>
-
-          <form className={styles.form} aria-label="แบบฟอร์มเข้าสู่ระบบ">
-            <label htmlFor="email">อีเมล</label>
-            <input id="email" type="email" autoComplete="username" placeholder="name@company.com" disabled />
-            <label htmlFor="password">รหัสผ่าน</label>
-            <input id="password" type="password" autoComplete="current-password" placeholder="กรอกรหัสผ่าน" disabled />
-            <button type="button" disabled>เข้าสู่ระบบ</button>
-            <span className={styles.disabledHint}>ช่องกรอกและปุ่มจะเปิดใช้งานเมื่อเชื่อมต่อระบบจริง</span>
-          </form>
+          <Suspense fallback={null}><AuthNotice /></Suspense>
+          <LoginForm />
 
           <div className={styles.previewBox}>
             <div><strong>กำลังเตรียมพื้นที่ทำงาน</strong><p>ดูตัวอย่างโครงหน้าได้โดยไม่มีข้อมูลจริง</p></div>

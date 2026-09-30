@@ -4,7 +4,7 @@ Applied on 2026-09-30 to Supabase HRM (kedohmbtpegupndldkex).
 
 ## Phase 2 status
 
-Database structure and RLS have been applied and verified. Phase 2 is NOT complete: the Next.js app has not been connected to Supabase Auth and no real owner/HR accounts have been provisioned. Root README's statement that phase 2 has not started predates this database work.
+Database structure and RLS have been applied and verified. Phase 2 is NOT complete: the Next.js app now uses Supabase Auth and protected database reads. Two owner emails are enrolled privately, but their Auth accounts must be activated by first-time password setup and email verification. Production Auth redirect and email delivery still need validation.
 
 ## Structure
 
@@ -28,4 +28,8 @@ hr_foundation.sql preserves the applied SQL. Remote migration history contains h
 
 ## Remaining work
 
-Connect Supabase Auth to Next.js, check membership on server routes, configure Auth URLs for Vercel, provision explicitly selected owner/HR accounts, and verify real login/logout plus unauthorized route access. Then continue phases 3–7.
+Validate Auth URLs for Vercel, owner activation, email delivery, real login/logout and password recovery. Server route authorization and database RLS are implemented and tested. Then continue phases 3–7.
+
+## Invited accounts
+
+hr_accounts.sql adds a private allowlist and Auth triggers. Only invited email addresses may register. The role is read from this administrator-controlled table; membership is created after email confirmation and disabled if the account email becomes unauthorized. Client access to invitation data is denied. Actual owner emails were inserted only in the live database, not in this repository. Test-only Auth rows are rolled back.
