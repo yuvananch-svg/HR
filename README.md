@@ -231,7 +231,7 @@
 
 ### แผนย่อยข้อ 5 — บันทึก แก้ไข และยกเลิกวันลา (2026-09-30)
 
-**สถานะ: วางแผนแล้ว ยังไม่เริ่ม implementation (0/9)** ต่อจากข้อ 4 ที่ตรวจรับแล้ว โดยใช้ประเภทลา สิทธิ์รายคน และวันหยุดที่มีอยู่ เจ้าของและ HR บันทึกแทนพนักงานได้โดยไม่มีขั้นอนุมัติหรือบัญชีพนักงาน
+**สถานะ: 5.1–5.7 ผู้ใช้ยืนยันว่าผ่านแล้ว; 5.8–5.9 ยังไม่ปิด (7/9)** ต่อจากข้อ 4 ที่ตรวจรับแล้ว โดยใช้ประเภทลา สิทธิ์รายคน และวันหยุดที่มีอยู่ เจ้าของและ HR บันทึกแทนพนักงานได้โดยไม่มีขั้นอนุมัติหรือบัญชีพนักงาน การตรวจรับรอบนี้ยึด 5.1–5.7 เป็น baseline ตามการยืนยันของผู้ใช้ ไม่ได้ทำซ้ำหรือเปลี่ยน semantics ของส่วนดังกล่าว
 
 | งานย่อย | ขอบเขตงาน | เกณฑ์ตรวจรับ |
 | --- | --- | --- |
@@ -253,15 +253,19 @@
 
 **Checklist ตรวจรับ:**
 
-- [ ] **5.1** กติกา สัญญาข้อมูล และแผน migration/locks
-- [ ] **5.2** การคำนวณและ preview
-- [ ] **5.3** บันทึก atomic และกันส่งซ้ำ
-- [ ] **5.4** วันทับซ้อนและ concurrency
-- [ ] **5.5** แก้ไขและ stale revision
-- [ ] **5.6** ยกเลิกและคืนยอด
-- [ ] **5.7** Audit และประวัติการเปลี่ยน
+- [x] **5.1** กติกา สัญญาข้อมูล และแผน migration/locks — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.2** การคำนวณและ preview — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.3** บันทึก atomic และกันส่งซ้ำ — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.4** วันทับซ้อนและ concurrency — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.5** แก้ไขและ stale revision — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.6** ยกเลิกและคืนยอด — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
+- [x] **5.7** Audit และประวัติการเปลี่ยน — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
 - [ ] **5.8** หน้าใช้งาน ภาษาไทย มือถือ และสิทธิ์
 - [ ] **5.9** Tests, production QA, deploy และ cleanup
+
+**หลักฐานรอบตรวจ 5.8–5.9 (2026-09-30):** ตรวจโค้ดพบฟอร์มสร้าง/แก้ไขและ preview/confirm บนหน้าวันลา, ฟอร์มแก้/ยกเลิกและ audit บนหน้ารายละเอียด; action หลังเขียน revalidate หน้าวันลา รายละเอียดพนักงาน และภาพรวม. ตรวจ validation ยกเลิกแล้วไม่พบ bug เพิ่ม: `val()` trim ค่าก่อน action ตรวจความยาวเหตุผล. `npm test -- --reporter=dot` ผ่าน 61/61; `npm run lint`, `npx tsc --noEmit`, `npm run build` ผ่านทั้งหมด. SQL regression transaction/rollback suite (owner/HR, anon/disabled/uninvited, direct DML, preview, quota, idempotency, overlap, edit/cancel, audit) ผ่าน Supabase connector; rollback แล้วไม่พบ fixture entitlements/leave entries ในปี 2096/2097. Two-session harness setup, session A, verification และ cleanup ทำงานสองครั้ง; connector serialize SQL execution ทำให้ session B ได้ `quota_exceeded` ที่ preview หลัง A commit แม้รอ A 15 วินาทีและเริ่ม B หลัง 100ms. ทั้งสองครั้ง cleanup คืน fixture count 0; ยังไม่มีผล race ที่รันพร้อมกันจริง. Browser `/workspace/leave` redirect ไปหน้า login เพราะไม่มี HR session จึงไม่ได้ตรวจฟอร์มจริงหรือทำ mutation; viewport 375px ยังไม่ได้วัด. ไม่มี Vercel CLI หรือสิทธิ์ deploy ที่ยืนยันได้ และไม่ได้ deploy. 5.8–5.9 ยังไม่ปิด.
+
+ตรวจ migration history ของ Supabase HRM พบ Phase 5 ทั้งสอง migration applied แล้ว. Advisors รอบนี้พบ security warning เรื่อง leaked-password protection 1 รายการ และ performance info เรื่อง unused index 2 รายการ; ไม่มี finding Phase 5 ใหม่จากผลที่แสดง. ผล regression และ fixture cleanup ข้างต้นรันกับ HRM production โดยใช้ข้อมูลทดสอบและ rollback/cleanup ตามสคริปต์ ไม่ใช่การตรวจ UI production.
 
 **ขอบเขต:** ไม่ทำ workflow อนุมัติ การแจ้งเตือน บัญชีพนักงาน การยกยอด หรือแดชบอร์ด/ตัวกรองประวัติเต็มรูปแบบของข้อ 6. **เกณฑ์ปิดข้อ 5:** เพิ่ม แก้ ยกเลิกวันลาได้จริงพร้อม preview ยอดถูกต้อง ไม่มีวันทับหรือบันทึกบางส่วน ตรวจผู้เปลี่ยนได้ และผ่าน race/permission/browser QA ครบ 9/9
 

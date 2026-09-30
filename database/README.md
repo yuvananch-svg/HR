@@ -28,6 +28,8 @@ hr_foundation.sql preserves the applied SQL. Remote migration history contains h
 
 ## Remaining work
 
+Phase 5 verification scripts are in `tests/phase5_leave_entries.sql` (transactional regression; all fixture changes roll back) and `tests/phase5_concurrency/` (persistent setup, two independent sessions, verification, and scoped cleanup). The transactional regression ran through the Supabase connector and passed; the transaction rolled back, and post-run checks found no 2096/2097 fixture entitlements or leave entries. The concurrency harness setup, session A, verification, and cleanup ran twice; the connector serialized SQL executions, so B's preview returned `quota_exceeded` after A committed both times. Cleanup reported zero fixture rows. This does not prove a concurrent race. Read `tests/phase5_concurrency/README.md` for run records and the required independent-session procedure. The concurrent race still needs a genuinely overlapping run.
+
 Phase 4 is complete on 2026-09-30: database integration, two-session concurrency checks, desktop browser QA, and mobile QA using a 375×900 CSS iframe viewport passed. Final guarded cleanup removed all persistent QA fixtures while preserving the baseline employee; final counts are employees 1, leave_types 0, policy defaults 0, entitlements 0, holidays 0, and leave_entries 0. Proceed with phase 5 leave-entry mutations. Follow up separately on additional account activation, a real HR account when supplied, and SMTP delivery for recipients outside the Supabase team.
 
 ## Invited accounts
