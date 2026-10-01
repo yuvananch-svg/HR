@@ -102,8 +102,9 @@ else
 fi
 [[ "$history_rows" == 0 ]] || fail 'target migration history must be absent or empty'
 # CLI's dump files contain managed data rows; its generated data SQL disables
-# triggers in that session. Recreate only this project's Auth trigger hooks first.
-psql --no-psqlrc --single-transaction --variable ON_ERROR_STOP=1 --variable VERBOSITY=sqlstate --variable SHOW_CONTEXT=never --file "$tmp/roles.sql" --file "$tmp/schema.sql" --file "$tmp/migration-history-schema.sql" --file "$tmp/auth-customizations.sql" --command 'SET session_replication_role = replica' --file "$tmp/data.sql" --file "$tmp/migration-history-data.sql" --dbname "$safe_restore_url" >/dev/null 2>"$tmp/restore-errors" || {
+# triggers in that session. Preserve app owners/grantors as postgres even when
+# a local managed administrator is needed for roles/Auth/data restoration.
+psql --no-psqlrc --single-transaction --variable ON_ERROR_STOP=1 --variable VERBOSITY=sqlstate --variable SHOW_CONTEXT=never --file "$tmp/roles.sql" --command 'SET ROLE postgres' --file "$tmp/schema.sql" --file "$tmp/migration-history-schema.sql" --command 'RESET ROLE' --file "$tmp/auth-customizations.sql" --command 'SET session_replication_role = replica' --file "$tmp/data.sql" --file "$tmp/migration-history-data.sql" --dbname "$safe_restore_url" >/dev/null 2>"$tmp/restore-errors" || {
   mapfile -t restore_error_summary < <(python3 - "$tmp/restore-errors" <<'CODE'
 import re,sys
 text=open(sys.argv[1],encoding="utf-8",errors="replace").read()
