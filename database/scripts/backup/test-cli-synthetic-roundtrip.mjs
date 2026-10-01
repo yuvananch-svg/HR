@@ -3,7 +3,7 @@
 // preparation/restore helpers. It uses two disposable, separate local stacks.
 // The only fake Supabase project reference is consumed by the strict CLI shim;
 // that shim rewrites only approved dump calls to the source stack's --local.
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -154,34 +154,18 @@ process.exit(r.status??1);
 `;
   return writeFile(path, body, { mode: 0o700 });
 }
-async function cloneManagedBaseline(container) {
-  // Clone only the pristine Supabase-managed postgres baseline into a real
-  // dedicated DB, preserving target-cluster built-in roles/extensions.
-  psql('postgres', `CREATE DATABASE ${targetDb} TEMPLATE template0;`);
-  for (const mode of ['--schema-only', '--data-only']) {
-    await new Promise((resolvePromise, reject) => {
-      const dump = spawn('docker', ['exec', container.id, 'pg_dump', mode, '-U', 'postgres', '-d', 'postgres'], { env: cleanEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
-      const load = spawn('docker', ['exec', '-i', container.id, 'psql', '--no-psqlrc', '--set=ON_ERROR_STOP=1', '--set=VERBOSITY=sqlstate', '-U', 'postgres', '-d', targetDb], { env: cleanEnv(), stdio: ['pipe', 'ignore', 'pipe'] });
-      let errors = '';
-      dump.stderr.on('data', chunk => { errors = (errors + chunk).slice(-8192); });
-      load.stderr.on('data', chunk => { errors = (errors + chunk).slice(-8192); });
-      let settled = false;
-      const timer = setTimeout(() => { dump.kill('SIGKILL'); load.kill('SIGKILL'); finish(1, 1); }, 180000);
-      dump.stdout.pipe(load.stdin);
-      let d = null, l = null;
-      const finish = (dumpStatus = d, loadStatus = l) => {
-        if (settled || dumpStatus === null || loadStatus === null) return;
-        settled = true; clearTimeout(timer);
-        if (dumpStatus === 0 && loadStatus === 0) resolvePromise();
-        else { dump.kill(); load.kill(); reject(new Error(`managed baseline clone failed (${mode}; SQLSTATE ${errors.match(/ERROR:\s+([0-9A-Z]{5})/)?.[1] ?? 'unavailable'})`)); }
-      };
-      load.stdin.on('error', () => { dump.kill(); finish(d ?? 1, l ?? 1); });
-      dump.on('close', c => { d = c; if (c !== 0) load.kill(); finish(); });
-      load.on('close', c => { l = c; finish(); });
-      dump.on('error', () => finish(1, l ?? 1));
-      load.on('error', () => finish(d ?? 1, 1));
-    });
-  }
+function dedicateManagedBaseline(container) {
+  // Keep the initialized managed objects, owners, extension configuration and
+  // ACLs intact. Replaying their schema as the restricted postgres role is not
+  // equivalent to provisioning Supabase. This target cluster is disposable.
+  if (psql('postgres', "select (select count(*) from auth.users) || ':' || (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','hr_private') and c.relkind in ('r','p','v','m','S','f'))") !== '0:0') die('target managed baseline is not pristine');
+  if (psql('postgres', `select count(*) filter (where datname='postgres') || ':' || count(*) filter (where datname='${targetDb}') from pg_database`) !== '1:0') die('target database dedication would collide with an existing database');
+  const admin = sql => run('docker', ['exec', container.id, 'psql', '--no-psqlrc', '--set=ON_ERROR_STOP=1', '-U', 'supabase_admin', '-d', 'template1', '--command', sql], { failure: 'isolated managed database dedication failed' });
+  admin('ALTER DATABASE postgres ALLOW_CONNECTIONS false');
+  admin("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='postgres'");
+  admin(`ALTER DATABASE postgres RENAME TO ${targetDb}`);
+  admin(`ALTER DATABASE ${targetDb} ALLOW_CONNECTIONS true`);
+  if (psql(targetDb, 'select current_database()') !== targetDb) die('dedicated initialized target database is unavailable');
 }
 
 async function main() {
@@ -280,7 +264,7 @@ async function main() {
   const targetDbUrl = labelValue(targetStatus, 'DB_URL');
   if (targetDbUrl !== 'postgresql://postgres:postgres@127.0.0.1:54322/postgres') die('target status returned an unexpected local database endpoint');
   assertContainer(projectIds[1], targetDir);
-  await cloneManagedBaseline(targetContainer);
+  dedicateManagedBaseline(targetContainer);
   // The helper is exercised with its true loopback and exact-database-name guard.
   const restoreEnv = cleanEnv({ AGE_IDENTITY_FILE: keyFile, RESTORE_DB_URL: `postgresql://postgres:postgres@127.0.0.1:54322/${targetDb}`, TMPDIR: privateDir });
   assertContainer(projectIds[1], targetDir);
