@@ -206,10 +206,7 @@ async function currentJourney(base, config) {
     await page.goto(`${base}/workspace/leave?year=${year}`);
     const leaveForm = page.locator("form").filter({ has: page.getByRole("button", { name: "ดูตัวอย่างวันลา" }) });
     const employeeSelect = leaveForm.getByLabel("พนักงาน", { exact: true });
-    const employeeOption = await employeeSelect.locator("option").evaluateAll((options, code) => {
-      const option = options.find(item => item.textContent?.includes(code));
-      return option?.getAttribute("value") ?? "";
-    }, employeeCode);
+    const employeeOption = await employeeSelect.locator("option").filter({ hasText: employeeCode }).getAttribute("value");
     if (!employeeOption) fail("The created synthetic employee was not available in the leave form.");
     await employeeSelect.selectOption(employeeOption);
     await leaveForm.getByLabel("ประเภทลา", { exact: true }).selectOption({ label: leaveType });
@@ -245,7 +242,7 @@ async function currentJourney(base, config) {
     await page.goto(`${base}/workspace/leave?year=${year}`);
     await page.getByLabel("ค้นหาชื่อหรือรหัส").fill(employeeCode);
     await page.getByRole("button", { name: "กรอง" }).click();
-    await page.getByText(employeeCode, { exact: false }).first().waitFor({ state: "visible" });
+    await page.getByRole("link", { name: new RegExp(employeeCode) }).filter({ hasText: leaveType }).waitFor({ state: "visible" });
     await page.goto(`${base}/workspace`);
     await page.getByRole("heading", { name: "ภาพรวม" }).waitFor({ state: "visible" });
     await page.getByText(employeeName, { exact: false }).first().waitFor({ state: "visible" });
@@ -282,8 +279,7 @@ async function smokeExisting(base, config, fixture) {
     await page.getByLabel("ค้นหาชื่อหรือรหัส").fill(fixture.employeeCode);
     await page.getByLabel("สถานะ", { exact: true }).selectOption("cancelled");
     await page.getByRole("button", { name: "กรอง" }).click();
-    await page.getByText(fixture.employeeCode, { exact: false }).first().waitFor({ state: "visible" });
-    await page.getByText(fixture.leaveType, { exact: false }).first().waitFor({ state: "visible" });
+    await page.getByRole("link", { name: new RegExp(fixture.employeeCode) }).filter({ hasText: fixture.leaveType }).waitFor({ state: "visible" });
     const width = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));
     if (width.page > width.viewport + 2) fail("Mobile history view overflows the viewport.");
     await context.close();

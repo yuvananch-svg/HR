@@ -71,7 +71,7 @@ for f in roles.sql schema.sql data.sql migration-history-schema.sql migration-hi
 # Parse and constrain the restore target. Supabase local stack must already be
 # initialized on loopback, with managed auth.users baseline but no app tables/data.
 export RESTORE_DB_NAME="$db_name"
-python3 > "$tmp/restore-connection.json" <<'PY' || fail 'RESTORE_DB_URL must target loopback and the exact dedicated database name'
+python3 > "$tmp/restore-connection.json" 2>/dev/null <<'PY' || fail 'RESTORE_DB_URL must target loopback and the exact dedicated database name'
 import json, os, sys
 from urllib.parse import unquote, urlsplit
 u=urlsplit(os.environ["RESTORE_DB_URL"])

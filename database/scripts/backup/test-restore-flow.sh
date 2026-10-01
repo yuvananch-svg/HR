@@ -68,6 +68,11 @@ if RESTORE_DB_URL='postgresql://postgres:pw@127.0.0.1:54322/hr_restore_synthetic
 assert_refusal_no_restore 'query override'
 if RESTORE_DB_URL='postgresql://postgres:pw@127.0.0.1:54322/hr_restore_synthetic#fragment' bash "$script_dir/restore-local-encrypted-backup.sh" "$archive" "$manifest" hr_restore_synthetic >/dev/null 2>&1; then echo 'URL fragment accepted' >&2; exit 1; fi
 assert_refusal_no_restore 'URL fragment'
+if malformed_output=$(RESTORE_DB_URL='postgresql://postgres:DO_NOT_LOG_CI_SECRET＠127.0.0.1:54322/hr_restore_synthetic' bash "$script_dir/restore-local-encrypted-backup.sh" "$archive" "$manifest" hr_restore_synthetic 2>&1); then
+  echo 'malformed credential URL accepted' >&2; exit 1
+fi
+[[ "$malformed_output" != *DO_NOT_LOG_CI_SECRET* ]] || { echo 'malformed restore URL leaked its credential' >&2; exit 1; }
+assert_refusal_no_restore 'malformed credential URL'
 if APP_OBJECTS=1 bash "$script_dir/restore-local-encrypted-backup.sh" "$archive" "$manifest" hr_restore_synthetic >/dev/null 2>&1; then echo 'nonempty app target accepted' >&2; exit 1; fi
 assert_refusal_no_restore 'nonempty target'
 

@@ -27,6 +27,10 @@ SH
 chmod +x "$tmp/supabase" "$tmp/age"
 export PATH="$tmp:$PATH" CALL_LOG="$tmp/calls" ENV_LOG="$tmp/env" BACKUP_OUTPUT_DIR="$tmp/out" AGE_RECIPIENT=age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqs
 ref=abcdefghijklmnopqrst
+if malformed_output=$(env SUPABASE_PROJECT_REF="$ref" SUPABASE_DB_URL='postgresql://postgres:DO_NOT_LOG_CI_SECRET＠db.abcdefghijklmnopqrst.supabase.co:5432/postgres' bash "$root/create-encrypted-backup.sh" "$ref" 2>&1); then
+  echo 'malformed credential URL accepted' >&2; exit 1
+fi
+[[ "$malformed_output" != *DO_NOT_LOG_CI_SECRET* ]] || { echo 'malformed URL leaked its credential' >&2; exit 1; }
 if env SUPABASE_PROJECT_REF="$ref" SUPABASE_DB_URL='postgresql://user:p@db.zyxwvutsrqponmlkjihg.supabase.co:5432/postgres' bash "$root/create-encrypted-backup.sh" "$ref" >/dev/null 2>&1; then echo 'wrong host ref accepted' >&2; exit 1; fi
 if env SUPABASE_PROJECT_REF=wrong SUPABASE_DB_URL='postgresql://u:p@db.abcdefghijklmnopqrst.supabase.co:5432/postgres' bash "$root/create-encrypted-backup.sh" "$ref" >/dev/null 2>&1; then echo 'wrong environment ref accepted' >&2; exit 1; fi
 if env SUPABASE_PROJECT_REF="$ref" SUPABASE_DB_URL='postgresql://u:p@db.abcdefghijklmnopqrst.supabase.co:5432/postgres' bash "$root/create-encrypted-backup.sh" wrong >/dev/null 2>&1; then echo 'bad expected ref accepted' >&2; exit 1; fi

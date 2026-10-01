@@ -48,7 +48,7 @@ started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # Parse with Python's URL parser so percent-encoded credentials are decoded
 # exactly once. CLI v2.119.0's db-url resolver supports ambient PGPASSWORD,
 # then passes the connection password to its Docker pg_dump container as env.
-python3 > "$tmp/connection.json" <<'PY' || fail 'database URL is malformed or missing username/password/host/port/database'
+python3 > "$tmp/connection.json" 2>/dev/null <<'PY' || fail 'database URL is malformed or missing username/password/host/port/database'
 import json, os, sys
 from urllib.parse import unquote, urlsplit
 u = urlsplit(os.environ["SUPABASE_DB_URL"])
