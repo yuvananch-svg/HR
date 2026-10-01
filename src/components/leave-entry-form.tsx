@@ -10,7 +10,7 @@ type Initial={employee_id?:string;leave_type_id?:string;start_date?:string;end_d
 type Preview={days:{leave_date:string;days:number;half_period:string|null;counts:boolean;reason:string|null}[];balances:{year:number;quota_days:number;used_before:number;requested_days:number;used_after:number;remaining_after:number}[];released_balances?:{leave_type_id:string;year:number;quota_days:number;used_before:number;requested_days:number;used_after:number;remaining_after:number}[];fingerprint:string};
 const blank:LeaveActionState={success:false,message:"",errors:{}};
 function skippedDayLabel(reason:string|null) { if(reason==="holiday")return "วันหยุด";if(reason==="weekend")return "เสาร์–อาทิตย์";if(reason==="half_day")return "ครึ่งวัน";if(reason==="working_day")return "วันทำงาน";return "ไม่นับวันทำงาน"; }
-export function LeaveEntryForm({employees,types,initial={},editing=false}:{employees:Employee[];types:LeaveType[];initial?:Initial;editing?:boolean}) {
+export function LeaveEntryForm({employees,types,initial={},editing=false,returnTo="/workspace/leave"}:{employees:Employee[];types:LeaveType[];initial?:Initial;editing?:boolean;returnTo?:string}) {
  const router=useRouter();
  const [preview,setPreview]=useState<Preview|null>(null);const [previewMessage,setPreviewMessage]=useState("");const [previewPending,setPreviewPending]=useState(false);const [requestKey,setRequestKey]=useState("");const [confirmed,setConfirmed]=useState(false);const [previewAfterConflict,setPreviewAfterConflict]=useState(false);const intent=useRef(0);
  const [values,setValues]=useState({employee_id:initial.employee_id??"",leave_type_id:initial.leave_type_id??"",start_date:initial.start_date??"",end_date:initial.end_date??"",unit:initial.unit??"full",reason:initial.reason??"",change_reason:initial.change_reason??""});
@@ -19,7 +19,7 @@ export function LeaveEntryForm({employees,types,initial={},editing=false}:{emplo
  // React resets native controls after a resolved form action, including failures.
  // Remount from retained controlled values so retries keep the original payload/key.
  const disabled=pending||previewPending;
- useEffect(()=>{if(state.success&&state.id){router.push(`/workspace/leave/${state.id}`);router.refresh();}},[state,router]);
+ useEffect(()=>{if(state.success&&state.id){router.push(`/workspace/leave/${state.id}?returnTo=${encodeURIComponent(returnTo)}`);router.refresh();}},[state,router,returnTo]);
  function invalidate(){intent.current++;setPreview(null);setConfirmed(false);setPreviewMessage("");setPreviewAfterConflict(false);setPreviewPending(false);}
  async function runPreview(form:HTMLFormElement){if(!requestKey)setRequestKey(crypto.randomUUID());const token=++intent.current;const data=new FormData(form);data.set("employee_id",String(data.get("employee_id")??""));setPreviewPending(true);setPreviewMessage("");try{const result=await previewLeaveAction(data);if(token!==intent.current)return;if(result.success&&result.preview){setPreview(result.preview as Preview);setPreviewMessage("ตรวจสอบตัวอย่างแล้ว กรุณาตรวจวันที่และยอดคงเหลือก่อนยืนยัน");setPreviewAfterConflict(true);}else setPreviewMessage(result.message||"ตรวจสอบวันลาไม่สำเร็จ");}catch{if(token===intent.current)setPreviewMessage("ระบบตรวจสอบวันลาไม่สำเร็จ กรุณาลองอีกครั้ง");}finally{if(token===intent.current)setPreviewPending(false);}}
  const currentPreview=state.message.includes("ตัวอย่างใหม่")&&!previewAfterConflict?null:preview;

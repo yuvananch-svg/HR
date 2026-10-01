@@ -1,7 +1,7 @@
 import "server-only";
 import { requireStaff } from "./auth";
-import { normalizeRelatedRows, safePage, safePageSize, type EmployeeInput, type EmployeeRow } from "./employees";
-import { bangkokToday } from "./workspace";
+import { safePage, safePageSize, type EmployeeInput, type EmployeeRow } from "./employees";
+import { bangkokToday, recordedUsageByEmployeeTypeYear } from "./workspace";
 import { readAll } from "./data";
 
 export type EmployeeListOptions = {
@@ -33,28 +33,32 @@ export async function getEmployeeDetail(id: string, year?: number) {
   if (error) err("ไม่สามารถโหลดข้อมูลพนักงานได้");
   if (!employee) return null;
   const selectedYear = year ?? Number(bangkokToday().slice(0, 4));
-  const [documents, bankAccounts, emergencyContacts, entitlementsRows, history, leaveDays, policies] = await Promise.all([
+  const [documents, bankAccounts, emergencyContacts, entitlementsRows, history, leaveDays, policies, allTypes] = await Promise.all([
     client.from("identity_documents").select("id,employee_id,document_type,issuing_country,expires_on,created_at,updated_at").eq("employee_id", id).order("created_at"),
     client.from("bank_accounts").select("id,employee_id,bank_name,account_name,is_primary,created_at,updated_at").eq("employee_id", id).order("is_primary", { ascending: false }).order("created_at"),
     client.from("emergency_contacts").select("id,employee_id,name,relationship,phone,priority,created_at,updated_at").eq("employee_id", id).order("priority"),
-    readAll((from, to) => client.from("leave_entitlements").select("id,employee_id,leave_type_id,year,quota_days,source,override_reason,updated_at,leave_types(name)").eq("employee_id", id).order("year", { ascending: false }).order("id").range(from, to)),
-    readAll((from, to) => client.from("leave_entries").select("id,employee_id,leave_type_id,start_date,end_date,status,reason,leave_types(name)").eq("employee_id", id).order("start_date", { ascending: false }).order("id").range(from, to)),
-    readAll((from, to) => client.from("leave_entry_days").select("leave_date,days,leave_entries!inner(employee_id,leave_type_id,status)").eq("leave_entries.employee_id", id).eq("leave_entries.status", "recorded").order("id").range(from, to)),
+    readAll((from, to) => client.from("leave_entitlements").select("id,employee_id,leave_type_id,year,quota_days,source,override_reason,updated_at,leave_types(name)").eq("employee_id", id).eq("year",selectedYear).order("id").range(from, to)),
+    client.from("leave_entries").select("id,employee_id,leave_type_id,start_date,end_date,status,reason,leave_types(name)").eq("employee_id", id).lte("start_date",`${selectedYear}-12-31`).gte("end_date",`${selectedYear}-01-01`).order("created_at", {ascending:false}).order("id",{ascending:false}).limit(25),
+    readAll((from, to) => client.from("leave_entry_days").select("leave_date,days,leave_entries!inner(employee_id,leave_type_id,status)").eq("leave_entries.employee_id", id).eq("leave_entries.status", "recorded").gte("leave_date",`${selectedYear}-01-01`).lte("leave_date",`${selectedYear}-12-31`).order("leave_date").order("id").range(from, to)),
     readAll((from,to)=>client.from("leave_policy_defaults").select("leave_type_id,quota_days").eq("year",selectedYear).order("leave_type_id").range(from,to)),
+    readAll((from,to)=>client.from("leave_types").select("id,name,is_active").order("sort_order").order("id").range(from,to)),
   ]);
-  if ([documents, bankAccounts, emergencyContacts].some((r) => r.error)) err("ไม่สามารถโหลดประวัติพนักงานได้");
+  if ([documents, bankAccounts, emergencyContacts, history].some((r) => r.error)) err("ไม่สามารถโหลดประวัติพนักงานได้");
   const entitlements = entitlementsRows;
   const days = leaveDays;
+  const usage = recordedUsageByEmployeeTypeYear(days as unknown as import("./workspace").LeaveDay[]);
   const balances = entitlements.map((quota) => {
-    const used = days.filter((day) => Number(day.leave_date.slice(0, 4)) === quota.year
-      && normalizeRelatedRows(day.leave_entries).some((entry) => entry.leave_type_id === quota.leave_type_id)).reduce((sum, day) => sum + Number(day.days), 0);
+    const used = usage.get(`${id}:${quota.leave_type_id}:${quota.year}`) ?? 0;
     const policy=quota.year===selectedYear?policies.find(p=>p.leave_type_id===quota.leave_type_id):undefined;
     return { ...quota, policy_quota: policy ? Number(policy.quota_days) : null, used, remaining: Number(quota.quota_days) - used };
   });
+  const entitledTypeIds = new Set(entitlements.map(row=>row.leave_type_id));
+  const historicallyUsedTypeIds = new Set(Array.from(usage.keys()).filter(key=>key.startsWith(`${id}:`)&&key.endsWith(`:${selectedYear}`)).map(key=>key.split(":")[1]));
+  const missingEntitlements = allTypes.filter(type => (type.is_active || historicallyUsedTypeIds.has(type.id)) && !entitledTypeIds.has(type.id));
   return { employee: employee as EmployeeRow, documents: (documents.data ?? []).map(row => ({ ...row, document_number: null as string | null })),
     bankAccounts: (bankAccounts.data ?? []).map(row => ({ ...row, account_number: null as string | null })),
-    emergencyContacts: emergencyContacts.data ?? [], balances, history,
-    yearHistory: history.filter((entry) => entry.start_date <= `${selectedYear}-12-31` && entry.end_date >= `${selectedYear}-01-01`),
+    emergencyContacts: emergencyContacts.data ?? [], balances, missingEntitlements, history: history.data ?? [],
+    yearHistory: history.data ?? [],
     year: selectedYear };
 }
 

@@ -10,7 +10,7 @@ vi.mock("@/app/workspace/leave/actions", () => ({
   previewLeaveAction: mocks.previewLeaveAction,
   saveLeaveAction: mocks.saveLeaveAction,
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, refresh: vi.fn() }) }));
 
 import { LeaveEntryForm } from "./leave-entry-form";
 
@@ -148,6 +148,15 @@ describe("LeaveEntryForm preview gate", () => {
     fireEvent.submit(formElement());
     await waitFor(() => expect(mocks.saveLeaveAction).toHaveBeenCalledTimes(2));
     expect((mocks.saveLeaveAction.mock.calls[1][1] as FormData).get("request_key")).toBe(key);
+  });
+
+  it("returns to the originating filtered history after a successful write", async () => {
+    mocks.saveLeaveAction.mockResolvedValueOnce({success:true,message:"saved",errors:{},id:"33333333-3333-4333-8333-333333333333"});
+    const returnTo=`/workspace/leave?employee_id=${employeeId}&year=2026&page=2`;
+    render(<LeaveEntryForm employees={employees} types={types} returnTo={returnTo}/>);
+    await previewAndConfirm();
+    fireEvent.submit(formElement());
+    await waitFor(()=>expect(mocks.push).toHaveBeenCalledWith(`/workspace/leave/33333333-3333-4333-8333-333333333333?returnTo=${encodeURIComponent(returnTo)}`));
   });
 
   it("disables the save control while a write is pending", async () => {
