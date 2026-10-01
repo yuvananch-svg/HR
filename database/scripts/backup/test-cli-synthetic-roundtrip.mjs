@@ -248,7 +248,10 @@ async function main() {
   // role name while retaining every privilege and grant-option entry.
   const catalogFingerprintSql = (await readFile(join(root, 'database/tests/restore-rehearsal/fingerprint.sql'), 'utf8'))
     .replace("grantor::text||':'||grantee::text", "pg_get_userbyid(grantor)||':'||case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end")
-    .replace("order by grantor,grantee,privilege_type,is_grantable", "order by pg_get_userbyid(grantor),case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,privilege_type,is_grantable");
+    .replace("order by grantor,grantee,privilege_type,is_grantable", "order by pg_get_userbyid(grantor),case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,privilege_type,is_grantable")
+    .replace("c.relforcerowsecurity||':'||pg_temp.hr_acl", "c.relforcerowsecurity||':'||pg_get_userbyid(c.relowner)||':'||pg_temp.hr_acl")
+    .replace("nspname||':'||pg_temp.hr_acl(nspacl", "nspname||':'||pg_get_userbyid(nspowner)||':'||pg_temp.hr_acl(nspacl")
+    .replace("pg_get_functiondef(p.oid)||':'||pg_temp.hr_acl", "pg_get_functiondef(p.oid)||':'||pg_get_userbyid(p.proowner)||':'||pg_temp.hr_acl");
   const sourceCatalogFingerprint = psql('postgres', catalogFingerprintSql);
   const shimBin = join(work, 'shim-bin'); await mkdir(shimBin, { mode: 0o700 });
   const shimPath = join(shimBin, 'supabase'); await strictSupabaseShim(shimPath, { sourceWorkdir: sourceDir, tempRoot: privateDir });
