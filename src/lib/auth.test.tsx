@@ -27,4 +27,19 @@ describe("server authorization", () => {
     mocks.member.mockResolvedValue({ data: { role: "hr", is_active: true }, error: null });
     expect((await requireStaff()).member.role).toBe("hr");
   });
+  it.each([null, { role: "employee", is_active: true }, { role: "owner", is_active: false }])("denies uninvited or unauthorized memberships %j", async (member) => {
+    mocks.user.mockResolvedValue({ data: { user: { id: "u", user_metadata: { role: "owner" } } }, error: null });
+    mocks.member.mockResolvedValue({ data: member, error: null });
+    await expect(requireStaff()).rejects.toThrow("notice=denied");
+  });
+  it("rejects an Auth error even when user data is present", async () => {
+    mocks.user.mockResolvedValue({ data: { user: { id: "u" } }, error: { message: "expired" } });
+    await expect(requireStaff()).rejects.toThrow("notice=login");
+    expect(mocks.member).not.toHaveBeenCalled();
+  });
+  it("permits an active owner based on membership", async () => {
+    mocks.user.mockResolvedValue({ data: { user: { id: "u" } }, error: null });
+    mocks.member.mockResolvedValue({ data: { role: "owner", is_active: true }, error: null });
+    expect((await requireStaff()).member.role).toBe("owner");
+  });
 });

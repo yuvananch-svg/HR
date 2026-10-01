@@ -147,4 +147,11 @@ comment on table public.app_users is 'Allowlist managed only by trusted administ
 comment on table public.audit_events is 'Append-only for clients. Sensitive values must be redacted by future audit writer.';
 notify pgrst,'reload schema';
 
-revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+-- Fresh vanilla Postgres/Supabase installs may not have this Supabase event
+-- trigger function. Preserve the hardening where it exists without making
+-- clean local bootstrap depend on an optional pre-existing function.
+do $$ begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    execute 'revoke execute on function public.rls_auto_enable() from public, anon, authenticated';
+  end if;
+end $$;
