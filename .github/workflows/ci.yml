@@ -65,3 +65,45 @@ jobs:
         run: node database/scripts/phase5-concurrency.mjs cleanup-fallback
       - name: Rehearse synthetic backup and restore in a separate database
         run: bash database/scripts/restore-rehearsal.sh "${{ job.services.postgres.id }}"
+
+  fullstack-supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.119.0
+      - run: npm ci
+      - name: Install PostgreSQL client and isolated Chromium dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client age
+          npx playwright install --with-deps chromium
+      - name: Verify encrypted backup guards and synthetic cryptographic round trips
+        run: |
+          bash database/scripts/backup/test-guards.sh
+          bash database/scripts/backup/test-age-roundtrip.sh
+          bash database/scripts/backup/test-restore-flow.sh
+      - name: Start ephemeral Supabase and verify managed Auth and PostgREST
+        id: fullstack-api
+        env:
+          LOCAL_SUPABASE_PROJECT_DIR_FILE: ${{ runner.temp }}/hr-supabase-project-state.json
+          LOCAL_SUPABASE_EVIDENCE: ${{ runner.temp }}/hr-auth-api-evidence.json
+        run: node database/scripts/fullstack-supabase.mjs prepare "${{ runner.temp }}/hr-supabase-ci"
+      - name: Rehearse browser journey and rollback against synthetic local data
+        if: steps.fullstack-api.outcome == 'success'
+        env:
+          LOCAL_TEST_CONFIRM: I_UNDERSTAND_LOCAL_SYNTHETIC_ONLY
+        run: node database/scripts/web-release-rollback.mjs
+      - name: Stop and remove only the ephemeral Supabase project
+        if: always()
+        env:
+          LOCAL_SUPABASE_PROJECT_DIR_FILE: ${{ runner.temp }}/hr-supabase-project-state.json
+        run: node database/scripts/fullstack-supabase.mjs cleanup

@@ -1,0 +1,15 @@
+# Phase 7 security review — 2026-10-01
+
+Read-only production catalog/advisor review; no roles, Auth settings, subscription or production records changed.
+
+- All 13 public application tables enable RLS. `anon` has no SELECT privilege on any of them. `authenticated` has no direct DELETE privilege. Direct INSERT remains limited to employee registration/detail tables; allowlist, audit, leave policies, entitlements, entries, charged days and request ledger remain administrator/RPC managed.
+- `authenticated` cannot SELECT the private account invitation table. No public SECURITY DEFINER function is executable by anon. Reviewed employee/leave public wrappers are SECURITY INVOKER; private implementations have empty search_path and denied anonymous EXECUTE. Staff authorization is enforced by the reviewed private guard and application `requireStaff`.
+- Application authorization calls verified `auth.getUser()` and checks the active `app_users` role. It does not trust `user_metadata`; forged metadata is covered by tests. The proxy refreshes/validates the user with getUser; protected workspace/actions enforce membership separately.
+- Runtime configuration rejects secret/service-role keys and production URLs from development/test/preview. The former embedded public URL/key fallback and target inference were removed and Production smoke passed.
+- Supabase security advisor returns one existing warning: leaked-password protection disabled. Official docs restrict that feature to Pro and above. The user-selected Free/no-additional-cost constraint is documented; no upgrade or Auth configuration change was made. The operator must acknowledge this remaining limitation before final handover.
+- Storage catalog counts are zero buckets and zero objects. This is a current inventory, not a guarantee for future backups; when Storage is used, object bytes need their own backup.
+- Production dependency audit (`npm audit --omit=dev --json`) reported zero vulnerabilities on 2026-10-01. This is dependency advisory evidence, not a substitute for application authorization tests.
+
+Fresh isolated SQL tests already cover active owner/HR, disabled, nonmember, anon and RPC-only writes. A real isolated Supabase Auth/PostgREST/browser test is being prepared separately. SQL JWT simulations are not browser account acceptance, password recovery or SMTP delivery evidence. Existing production owner read-only smoke does not replace deferred HR QA. Full session/browser evidence and named-operator acknowledgement remain acceptance boundaries.
+
+References: [password security](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), [backup scope](https://supabase.com/docs/guides/platform/backups). This report contains no private row values, account addresses, tokens or production dumps.

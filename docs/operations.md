@@ -43,6 +43,8 @@ The 2026-10-01 advisor review reported leaked-password protection disabled. The 
 
 ## Selected backup policy and current evidence
 
+Prepared tooling and synthetic test boundaries are documented in [encrypted backup operations](backup-operations.md). The real age cryptographic round trip and restore orchestration with stubbed SQL passed locally. Live CLI/managed-Supabase restoration and production export remain open. The [web release/rollback harness](web-release-rollback.md) uses only an ephemeral local Supabase stack; its first hosted execution is pending.
+
 On 2026-10-01 the user selected personal Google Drive, daily backups retained for 30 days, with target RPO 24 hours and RTO 4 hours. These are selected targets, not measured guarantees or a configured automated schedule. A private owner-only HR Backups folder was created and its unshared permissions verified; it currently contains no production backup. Encryption and key custody must be established before export/upload, with the decryption key held separately from the archive. No actual database password/connection credential is currently available to the backup process. Supabase dashboard sign-in was not confirmed after the credential request timed out.
 
 Hosted run 36848091079 passed the synthetic drill in `database/tests/restore-rehearsal/README.md` exercises populated synthetic pg_dump/pg_restore and restored permissions/regressions; it cannot substitute for recovering the actual production database, Supabase Auth configuration, or Storage files. Leaked-password protection is documented by Supabase as Pro and above; the current Free/no-additional-cost constraint leaves it unavailable without a later budget decision.
