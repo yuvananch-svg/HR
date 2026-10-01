@@ -254,6 +254,12 @@ async function main() {
     'request_ledger',(select jsonb_agg(to_jsonb(r) order by r.actor_id,r.request_key) from public.leave_entry_requests r where r.actor_id=${ownerQ}),
     'audit',(select jsonb_agg(to_jsonb(a) order by a.id) from public.audit_events a where a.actor_id in (${ownerQ},${hrQ}) or a.record_id=${employeeQ}))::text`;
   const sourceFingerprint = psql('postgres', graphFingerprintSql);
+  // Role OIDs differ across independent clusters; compare effective grants by
+  // role name while retaining every privilege and grant-option entry.
+  const catalogFingerprintSql = (await readFile(join(root, 'database/tests/restore-rehearsal/fingerprint.sql'), 'utf8'))
+    .replace("grantor::text||':'||grantee::text", "pg_get_userbyid(grantor)||':'||case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end")
+    .replace("order by grantor,grantee,privilege_type,is_grantable", "order by pg_get_userbyid(grantor),case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,privilege_type,is_grantable");
+  const sourceCatalogFingerprint = psql('postgres', catalogFingerprintSql);
   const shimBin = join(work, 'shim-bin'); await mkdir(shimBin, { mode: 0o700 });
   const shimPath = join(shimBin, 'supabase'); await strictSupabaseShim(shimPath, { sourceWorkdir: sourceDir, tempRoot: privateDir });
   const archiveDir = join(privateDir, 'out'); await mkdir(archiveDir, { mode: 0o700 });
@@ -280,6 +286,7 @@ async function main() {
   assertContainer(projectIds[1], targetDir);
   const restoredFingerprint = psql(targetDb, graphFingerprintSql);
   if (restoredFingerprint !== sourceFingerprint) die('restored synthetic Auth/HR graph differs from source');
+  if (psql(targetDb, catalogFingerprintSql) !== sourceCatalogFingerprint) die('restored table checksums, effective ACLs, policies, constraints, triggers, or function definitions differ from source');
   const checks = psql(targetDb, `select (exists(select 1 from pg_roles where rolname='hr_cli_backup_probe'))::int || ':' || (select relrowsecurity::int from pg_class where oid='public.employees'::regclass) || ':' || ((select count(*) from pg_policies where schemaname='public' and tablename='employees')>=3)::int || ':' || (select exists(select 1 from pg_proc where oid='public.save_holiday(uuid,date,text,timestamp with time zone)'::regprocedure))::int || ':' || has_table_privilege('authenticated','public.employees','select')::int || ':' || has_table_privilege('anon','public.employees','select')::int || ':' || has_function_privilege('authenticated','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || has_function_privilege('anon','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_created' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_changed' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_constraint where conrelid='public.app_users'::regclass and confrelid='auth.users'::regclass and contype='f' and pg_get_constraintdef(oid) ilike '%FOREIGN KEY (id) REFERENCES auth.users(id)%'))::int`);
   if (checks !== '1:1:1:1:1:0:1:0:1:1:1') die('restored role, RLS, effective grants, RPC, Auth triggers, or FK verification failed');
   let verifySql = await readFile(join(root, 'database/tests/restore-rehearsal/verify.sql'), 'utf8');
