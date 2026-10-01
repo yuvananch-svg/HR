@@ -4,7 +4,7 @@ Prepared 2026-10-01. This is an operator procedure, not evidence that a release,
 
 ## Responsibilities and decisions
 
-The owner must name the application/database operator and an incident contact/channel before handover. Confirm actual leave types, quotas, weekends/holidays, year rollover, permitted users, required personal fields, correction/deletion authority, and retention. No default retention period is implied. Additional-account and HR browser acceptance remain deferred. Custom SMTP sender, provider and budget remain decisions; do not create recipients or purchase services from this guide.
+The owner selected “name separate operators later” on 2026-10-01. A named application/database/backup operator and incident contact/channel remain required before handover. Confirm actual leave types, quotas, weekends/holidays, year rollover, permitted users, required personal fields, correction/deletion authority, and retention. No default retention period is implied. Additional-account and HR browser acceptance remain deferred. Custom SMTP sender, provider and budget remain decisions; do not create recipients or purchase services from this guide.
 
 ## Daily owner/HR workflow
 
@@ -40,3 +40,9 @@ Restore only to a dedicated isolated target after checking its hostname/project 
 ## Security follow-up
 
 The 2026-10-01 advisor review reported leaked-password protection disabled. The operator should review [password security](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), confirm feature availability and implications, and obtain the owner's decision before changing Auth configuration. No credential, role, session policy or Auth setting was changed by this review.
+
+## Selected backup policy and current evidence
+
+On 2026-10-01 the user selected personal Google Drive, daily backups retained for 30 days, with target RPO 24 hours and RTO 4 hours. These are selected targets, not measured guarantees or a configured automated schedule. A private owner-only HR Backups folder was created and its unshared permissions verified; it currently contains no production backup. Encryption and key custody must be established before export/upload, with the decryption key held separately from the archive. No actual database password/connection credential is currently available to the backup process. Supabase dashboard sign-in was not confirmed after the credential request timed out.
+
+Hosted run 36848091079 passed the synthetic drill in `database/tests/restore-rehearsal/README.md` exercises populated synthetic pg_dump/pg_restore and restored permissions/regressions; it cannot substitute for recovering the actual production database, Supabase Auth configuration, or Storage files. Leaked-password protection is documented by Supabase as Pro and above; the current Free/no-additional-cost constraint leaves it unavailable without a later budget decision.

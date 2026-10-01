@@ -309,9 +309,9 @@
 
 ### 7. ตรวจพร้อมใช้และส่งมอบระบบ — แผนงานย่อย
 
-**สถานะ: เริ่มดำเนินงานแล้ว — checklist ตรวจรับยัง 0/9** — ข้อ 1–6 ผ่านตามขอบเขตที่บันทึกไว้ และ cleanup fixture ข้อ 5–6 เสร็จแล้ว. เว็บ deploy อยู่แล้ว; ข้อ 7 คือยืนยันความพร้อมใช้งานและการดูแลต่อ ไม่ใช่เพียง deploy ซ้ำ. บัญชี HR/เจ้าของเพิ่มเติมและ SMTP ยังมีงานติดตาม; ผล owner หรือ SQL role test ไม่แทน browser QA ของ HR.
+**สถานะ: เริ่มดำเนินงานแล้ว — checklist ตรวจรับ 1/9 (7.2 ผ่านแล้ว)** — ข้อ 1–6 ผ่านตามขอบเขตที่บันทึกไว้ และ cleanup fixture ข้อ 5–6 เสร็จแล้ว. เว็บ deploy อยู่แล้ว; ข้อ 7 คือยืนยันความพร้อมใช้งานและการดูแลต่อ ไม่ใช่เพียง deploy ซ้ำ. บัญชี HR/เจ้าของเพิ่มเติมและ SMTP ยังมีงานติดตาม; ผล owner หรือ SQL role test ไม่แทน browser QA ของ HR.
 
-**ผลดำเนินงานรอบแรก:** Sol ตรวจงาน/Luna พัฒนาแล้ว: CI, environment guard, auth tests, guarded local SQL runner และคู่มือดูแล/backup/release. Tests 85/85 + target-guard/controller 9/9, lint/typecheck/build ผ่าน; dependency audit ไม่พบช่องโหว่. ยังไม่ปิดข้อ 7 เพราะ fresh SQL ใน workspace ติดข้อจำกัด root แต่สร้างฐานใหม่และรัน regression 6 ชุด รวมสอง connection รอ advisory lock จริงและ cleanup ผ่านบน PostgreSQL แยกใน CI แล้ว; ผู้ใช้อนุมัติและตั้งค่า URL/public key/target ครบ 3 ตัวเฉพาะ Vercel Production แล้ว; redeploy source `d1863aa` เป็น Ready และตรวจหน้าเว็บจริงอ่านข้อมูล HRM ได้ตามเดิม; ถอด fallback และ target inference ใน source แล้ว (85 app tests +10 runner tests/lint/typecheck/build ผ่าน); เพิ่ม synthetic backup/restore CI drill รอ hosted result, backup/restore ยังไม่ได้ทำจริง และยังต้องยืนยันนโยบายองค์กร/ผู้ดูแล. ผู้ใช้เลือก backup แบบไม่เพิ่มค่าใช้จ่าย. [ผลตรวจและ gate ที่ค้าง](docs/phase7-acceptance.md) ระบุหลักฐานตามจริง; HR ยังเลื่อน.
+**ผลดำเนินงานรอบแรก:** Sol ตรวจงาน/Luna พัฒนาแล้ว: CI, environment guard, auth tests, guarded local SQL runner และคู่มือดูแล/backup/release. Tests 85/85 + target-guard/controller 9/9, lint/typecheck/build ผ่าน; dependency audit ไม่พบช่องโหว่. ยังไม่ปิดข้อ 7 เพราะ fresh SQL ใน workspace ติดข้อจำกัด root แต่สร้างฐานใหม่และรัน regression 6 ชุด รวมสอง connection รอ advisory lock จริงและ cleanup ผ่านบน PostgreSQL แยกใน CI แล้ว; ผู้ใช้อนุมัติและตั้งค่า URL/public key/target ครบ 3 ตัวเฉพาะ Vercel Production แล้ว; redeploy source `d1863aa` เป็น Ready และตรวจหน้าเว็บจริงอ่านข้อมูล HRM ได้ตามเดิม; ถอด fallback และ target inference ใน source แล้ว (85 app tests +10 runner tests/lint/typecheck/build ผ่าน); synthetic pg_dump/pg_restore ลงฐานแยกผ่านบน PostgreSQL 17.11 พร้อมเทียบข้อมูล/สิทธิ์และรัน regression 6 ชุดหลังกู้; CI `36848091079` และ Production Ready ผ่าน, backup/restore ข้อมูลจริงยังไม่ได้ทำ (ชุดจำลองผ่านแล้ว) และยังต้องยืนยันนโยบายองค์กร/ผู้ดูแล. ผู้ใช้เลือก backup แบบไม่เพิ่มค่าใช้จ่ายบน Google Drive ส่วนตัว รายวัน เก็บ 30 วัน เป้าหมาย RPO 24 ชั่วโมง/RTO 4 ชั่วโมง; ผู้ดูแลจะระบุภายหลัง. [ผลตรวจและ gate ที่ค้าง](docs/phase7-acceptance.md) ระบุหลักฐานตามจริง; HR ยังเลื่อน.
 
 **ฐานก่อนเริ่ม:** production มีพนักงานจริงเดิมหนึ่งคน บัญชีแอปสองบัญชี และไม่มีชุดทดสอบวันลาเหลือหลัง cleanup. ยังไม่ถือว่านโยบายลา โควตา และวันหยุดจริงได้รับการตั้งค่า. ไม่ใช้ production เป็นฐานทดสอบหลัก และไม่เผยแพร่ dump/ข้อมูลพนักงาน/อีเมลบัญชี/secret ใน public repo.
 
@@ -334,7 +334,7 @@
 **Checklist ตรวจรับ:**
 
 - [ ] **7.1** baseline ขอบเขตและผู้รับผิดชอบ
-- [ ] **7.2** ฐานทดสอบและ automated regression/CI
+- [x] **7.2** ฐานทดสอบและ automated regression/CI
 - [ ] **7.3** สิทธิ์และความปลอดภัย
 - [ ] **7.4** บัญชีจริงและการส่งอีเมล/กู้คืน
 - [ ] **7.5** สำรองและกู้คืนบนฐานแยก
