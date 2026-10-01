@@ -1,6 +1,6 @@
 # HR — ระบบข้อมูลพนักงานและวันลา
 
-เว็บแอปภายในองค์กรสำหรับเจ้าของธุรกิจและฝ่าย HR เพื่อเก็บประวัติพนักงาน จัดการสิทธิ์วันลา และดูยอดคงเหลือที่ตรวจสอบย้อนหลังได้ เอกสารนี้เป็น **ข้อกำหนดและแผนพัฒนา** พร้อมผลดำเนินงานข้อ 1–4 และแผนงานย่อยสำหรับข้อ 5–7
+เว็บแอปภายในองค์กรสำหรับเจ้าของธุรกิจและฝ่าย HR เพื่อเก็บประวัติพนักงาน จัดการสิทธิ์วันลา และดูยอดคงเหลือที่ตรวจสอบย้อนหลังได้ เอกสารนี้เป็น **ข้อกำหนดและแผนพัฒนา** พร้อมผลดำเนินงานข้อ 1–5 และแผนงานสำหรับข้อ 6–7
 
 **เปิดตัวอย่างเว็บ:** [HR บน Vercel](https://hr-lac-theta.vercel.app/) → กด “ดูตัวอย่างหน้าจอ” เพื่อดูโครงหน้าแดชบอร์ด หน้าเข้าสู่ระบบใช้ Supabase Auth แล้ว และ `/workspace` อ่านข้อมูลจากฐานข้อมูลหลังตรวจสิทธิ์ ส่วน `/preview` ยังคงเป็นตัวอย่างสาธารณะไม่มีข้อมูลจริง ข้อ 2 สำเร็จตามการรับงานของผู้ใช้แล้ว โดยเก็บการทดสอบเปิดบัญชีเพิ่มเติมไว้เป็นงานติดตาม
 
@@ -95,7 +95,7 @@
 
 ## แผนเขียนโค้ดตามลำดับ
 
-ทุกช่วงควรจบด้วยสิ่งที่ทดลองได้จริง; ข้อ 1–3 สำเร็จแล้ว ข้อ 3 ผ่านการตรวจรับครบ 9/9 งานย่อย (100%) และผู้ใช้ยืนยันให้ปิดงานเมื่อ 2026-09-30 ข้อ 4 ผ่านครบ 9/9 งานย่อย (100%) รวม integration/concurrency/browser QA และ cleanup fixtures; หลักฐานอยู่ใน checklist ด้านล่าง ส่วนข้อ 5–7 ยังไม่ครบ การเปิดบัญชีเพิ่มเติมและ SMTP ของข้อ 2 ยังคงเป็นงานติดตาม
+ทุกช่วงควรจบด้วยสิ่งที่ทดลองได้จริง; ข้อ 1–3 สำเร็จแล้ว ข้อ 3 ผ่านการตรวจรับครบ 9/9 งานย่อย (100%) และผู้ใช้ยืนยันให้ปิดงานเมื่อ 2026-09-30 ข้อ 4 ผ่านครบ 9/9 งานย่อย (100%) รวม integration/concurrency/browser QA และ cleanup fixtures; หลักฐานอยู่ใน checklist ด้านล่าง ข้อ 5 ผู้ใช้รับงานหลักแล้วเมื่อ 2026-10-01 โดยเลื่อน HR browser QA และติดตาม cleanup แยกต่างหาก; ส่วนข้อ 6–7 ยังไม่ครบ การเปิดบัญชีเพิ่มเติมและ SMTP ของข้อ 2 ยังคงเป็นงานติดตาม
 
 1. **โครงเว็บและดีไซน์:** สร้าง Next.js/TypeScript หน้าเข้าสู่ระบบ โครงหน้า ธีมขาว–แดง และรูปแบบมือถือ; ตรวจสถานะว่าง โหลด และผิดพลาด
 2. **ฐานข้อมูลและสิทธิ์:** สร้าง migration ของตาราง ความสัมพันธ์ ข้อจำกัด index และ RLS; เชื่อม Supabase Auth; ทดสอบบัญชีที่มี/ไม่มีสิทธิ์
@@ -231,7 +231,7 @@
 
 ### แผนย่อยข้อ 5 — บันทึก แก้ไข และยกเลิกวันลา (2026-09-30)
 
-**สถานะ: 5.1–5.7 ผู้ใช้ยืนยันว่าผ่านแล้ว; 5.8–5.9 ยังไม่ปิด (7/9)** ต่อจากข้อ 4 ที่ตรวจรับแล้ว โดยใช้ประเภทลา สิทธิ์รายคน และวันหยุดที่มีอยู่ เจ้าของและ HR บันทึกแทนพนักงานได้โดยไม่มีขั้นอนุมัติหรือบัญชีพนักงาน การตรวจรับรอบนี้ยึด 5.1–5.7 เป็น baseline ตามการยืนยันของผู้ใช้ ไม่ได้ทำซ้ำหรือเปลี่ยน semantics ของส่วนดังกล่าว
+**สถานะ: งานหลักสำเร็จตามการรับงานของผู้ใช้ (9/9) — 2026-10-01; เลื่อน HR browser QA และติดตาม final fixture cleanup แยกต่างหาก ไม่ถือว่าทดสอบครบทุกบัญชีหรือ cleanup แล้ว** ต่อจากข้อ 4 ที่ตรวจรับแล้ว โดยใช้ประเภทลา สิทธิ์รายคน และวันหยุดที่มีอยู่ เจ้าของและ HR บันทึกแทนพนักงานได้โดยไม่มีขั้นอนุมัติหรือบัญชีพนักงาน การตรวจรับรอบนี้ยึด 5.1–5.7 เป็น baseline ตามการยืนยันของผู้ใช้ ไม่ได้ทำซ้ำหรือเปลี่ยน semantics ของส่วนดังกล่าว
 
 | งานย่อย | ขอบเขตงาน | เกณฑ์ตรวจรับ |
 | --- | --- | --- |
@@ -260,16 +260,16 @@
 - [x] **5.5** แก้ไขและ stale revision — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
 - [x] **5.6** ยกเลิกและคืนยอด — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
 - [x] **5.7** Audit และประวัติการเปลี่ยน — ผู้ใช้ยืนยันผ่านแล้ว; ยึดเป็น baseline
-- [ ] **5.8** หน้าใช้งาน ภาษาไทย มือถือ และสิทธิ์ — owner create/edit/cancel และ viewport 375px ผ่าน 2026-10-01; แก้ native form reset และทดสอบหลัง deploy ผ่าน; ยังขาด HR browser QA
-- [ ] **5.9** Tests, production QA, deploy และ cleanup — 61/61 tests, lint/typecheck/build, SQL regression, actual concurrent overlap/save-vs-quota checks และ deploy fix ผ่าน 2026-10-01; ยังรอ HR browser QA และ final fixture cleanup
+- [x] **5.8** หน้าใช้งาน ภาษาไทย มือถือ และสิทธิ์ — owner create/edit/cancel และ viewport 375px ผ่าน 2026-10-01; แก้ native form reset และทดสอบหลัง deploy ผ่าน; ผู้ใช้ให้ข้าม HR browser QA ก่อนและกลับมาทดสอบภายหลัง
+- [x] **5.9** Tests, production QA, deploy และ cleanup — 61/61 tests, lint/typecheck/build, SQL regression, actual concurrent overlap/save-vs-quota checks และ deploy fix ผ่าน 2026-10-01; ผู้ใช้รับงานหลักแล้ว; HR browser QA และ final fixture cleanup เป็นงานติดตามแยก
 
 **หลักฐานรอบตรวจ 5.8–5.9 (2026-09-30):** ตรวจโค้ดพบฟอร์มสร้าง/แก้ไขและ preview/confirm บนหน้าวันลา, ฟอร์มแก้/ยกเลิกและ audit บนหน้ารายละเอียด; action หลังเขียน revalidate หน้าวันลา รายละเอียดพนักงาน และภาพรวม. ตรวจ validation ยกเลิกแล้วไม่พบ bug เพิ่ม: `val()` trim ค่าก่อน action ตรวจความยาวเหตุผล. `npm test -- --reporter=dot` ผ่าน 61/61; `npm run lint`, `npx tsc --noEmit`, `npm run build` ผ่านทั้งหมด. SQL regression transaction/rollback suite (owner/HR, anon/disabled/uninvited, direct DML, preview, quota, idempotency, overlap, edit/cancel, audit) ผ่าน Supabase connector; rollback แล้วไม่พบ fixture entitlements/leave entries ในปี 2096/2097. Two-session harness setup, session A, verification และ cleanup ทำงานสองครั้ง; connector serialize SQL execution ทำให้ session B ได้ `quota_exceeded` ที่ preview หลัง A commit แม้รอ A 15 วินาทีและเริ่ม B หลัง 100ms. ทั้งสองครั้ง cleanup คืน fixture count 0; ยังไม่มีผล race ที่รันพร้อมกันจริง. Browser `/workspace/leave` redirect ไปหน้า login เพราะไม่มี HR session จึงไม่ได้ตรวจฟอร์มจริงหรือทำ mutation; viewport 375px ยังไม่ได้วัด. ไม่มี Vercel CLI หรือสิทธิ์ deploy ที่ยืนยันได้ และไม่ได้ deploy. 5.8–5.9 ยังไม่ปิด.
 
 ตรวจ migration history ของ Supabase HRM พบ Phase 5 ทั้งสอง migration applied แล้ว. Advisors รอบนี้พบ security warning เรื่อง leaked-password protection 1 รายการ และ performance info เรื่อง unused index 2 รายการ; ไม่มี finding Phase 5 ใหม่จากผลที่แสดง. ผล regression และ fixture cleanup ข้างต้นรันกับ HRM production โดยใช้ข้อมูลทดสอบและ rollback/cleanup ตามสคริปต์ ไม่ใช่การตรวจ UI production.
 
-**หลักฐานเพิ่มเติม 2026-10-01:** [ผลตรวจรับข้อ 5](docs/phase5-acceptance-20261001.md). Owner เพิ่มเต็มวัน → แก้ครึ่งเช้า → ยกเลิกคืนยอดผ่านบนเว็บจริง; overlap race ยืนยัน 2 independent DB sessions รอ advisory lock พร้อมกัน และเหลือ entry/day/audit อย่างละ 1; save-vs-quota override ถูกปฏิเสธด้วยยอดไม่พอ; mobile list/detail/edit preview ที่ iframe 375×900 มี document/body 360/360px. พบ native form reset หลัง action ที่ถูกปฏิเสธ แก้ใน `8aa69df` และตรวจบน production ว่าค่าเดิมและ request key คงอยู่. Tests 61/61, lint/typecheck/build ผ่านหลังแก้; Vercel deploy success. ข้อ 5.8–5.9 ยังเปิดจน HR browser QA และ guarded cleanup ผ่าน; ข้อมูลทดสอบเดิมเก็บไว้สำหรับ HR QA. ผลรอบก่อนที่ระบุว่าไม่ได้ deploy/ไม่มี browser session เป็นประวัติ ณ เวลานั้น ไม่ใช่สถานะล่าสุด.
+**หลักฐานเพิ่มเติม 2026-10-01:** [ผลตรวจรับข้อ 5](docs/phase5-acceptance-20261001.md). Owner เพิ่มเต็มวัน → แก้ครึ่งเช้า → ยกเลิกคืนยอดผ่านบนเว็บจริง; overlap race ยืนยัน 2 independent DB sessions รอ advisory lock พร้อมกัน และเหลือ entry/day/audit อย่างละ 1; save-vs-quota override ถูกปฏิเสธด้วยยอดไม่พอ; mobile list/detail/edit preview ที่ iframe 375×900 มี document/body 360/360px. พบ native form reset หลัง action ที่ถูกปฏิเสธ แก้ใน `8aa69df` และตรวจบน production ว่าค่าเดิมและ request key คงอยู่. Tests 61/61, lint/typecheck/build ผ่านหลังแก้; Vercel deploy success. ผู้ใช้รับงานหลักข้อ 5.8–5.9 เมื่อ 2026-10-01 โดยข้าม HR browser QA ไปก่อน; ข้อมูลทดสอบเดิมยังคงอยู่และ guarded cleanup ยังเป็นงานติดตาม ไม่อ้างว่า cleanup ผ่านแล้ว. ผลรอบก่อนที่ระบุว่าไม่ได้ deploy/ไม่มี browser session เป็นประวัติ ณ เวลานั้น ไม่ใช่สถานะล่าสุด.
 
-**ขอบเขต:** ไม่ทำ workflow อนุมัติ การแจ้งเตือน บัญชีพนักงาน การยกยอด หรือแดชบอร์ด/ตัวกรองประวัติเต็มรูปแบบของข้อ 6. **เกณฑ์ปิดข้อ 5:** เพิ่ม แก้ ยกเลิกวันลาได้จริงพร้อม preview ยอดถูกต้อง ไม่มีวันทับหรือบันทึกบางส่วน ตรวจผู้เปลี่ยนได้ และผ่าน race/permission/browser QA ครบ 9/9
+**ขอบเขต:** ไม่ทำ workflow อนุมัติ การแจ้งเตือน บัญชีพนักงาน การยกยอด หรือแดชบอร์ด/ตัวกรองประวัติเต็มรูปแบบของข้อ 6. **เกณฑ์ปิดข้อ 5:** เพิ่ม แก้ ยกเลิกวันลาได้จริงพร้อม preview ยอดถูกต้อง ไม่มีวันทับหรือบันทึกบางส่วน ตรวจผู้เปลี่ยนได้ และผ่าน race/permission/browser QA; ผู้ใช้อนุมัติรับงานหลัก 9/9 โดยยก HR browser QA และ final fixture cleanup เป็นงานติดตาม
 
 ### เกณฑ์รับงานรุ่นแรก
 
