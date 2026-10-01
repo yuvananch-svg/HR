@@ -19,7 +19,7 @@ values('d5000000-0000-4000-8000-000000000002','P5-CONCURRENCY','Phase5','Concurr
 insert into public.leave_types(id,name,is_active,sort_order)
 values('d5000000-0000-4000-8000-000000000003','P5 concurrency fixture',true,100000);
 insert into public.leave_policy_defaults(leave_type_id,year,quota_days)
-values('d5000000-0000-4000-8000-000000000003',2097,1.0);
+values('d5000000-0000-4000-8000-000000000003',2097,2.0);
 insert into public.leave_entitlements(employee_id,leave_type_id,year,quota_days,source)
-values('d5000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000003',2097,1.0,'policy');
+values('d5000000-0000-4000-8000-000000000002','d5000000-0000-4000-8000-000000000003',2097,2.0,'policy');
 commit;
