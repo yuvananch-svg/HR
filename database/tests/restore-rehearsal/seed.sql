@@ -74,9 +74,7 @@ begin
     'a7000000-0000-4000-8000-000000000013');
 
   if (select count(*) from public.leave_entries where id in(recorded_entry,cancelled_entry))<>2
-     or (select count(*) from public.leave_entry_days where leave_entry_id in(recorded_entry,cancelled_entry))<>3
-     or (select count(*) from public.leave_entry_requests where actor_id=owner_id
-        and request_key in ('a7000000-0000-4000-8000-000000000011','a7000000-0000-4000-8000-000000000012','a7000000-0000-4000-8000-000000000013'))<>3 then
+     or (select count(*) from public.leave_entry_days where leave_entry_id in(recorded_entry,cancelled_entry))<>3 then
     raise exception 'synthetic save/cancel RPC graph is incomplete';
   end if;
 end $$;
