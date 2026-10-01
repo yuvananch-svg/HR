@@ -39,7 +39,8 @@ function run(command, args, { cwd = root, env = cleanEnv(), input, timeout = 120
   const r = spawnSync(command, args, { cwd, env, input, encoding: 'utf8', timeout, maxBuffer: 16 * 1024 * 1024 });
   if (r.error || r.status !== 0) {
     const sqlstate = r.stderr?.match(/SQLSTATE ([0-9A-Z]{5})/);
-    die(failure + (sqlstate ? ` (SQLSTATE ${sqlstate[1]})` : ''));
+    const component = r.stderr?.match(/component (roles\.sql|schema\.sql|data\.sql|migration-history-schema\.sql|migration-history-data\.sql|auth-customizations\.sql)/);
+    die(failure + (sqlstate ? ` (SQLSTATE ${sqlstate[1]}${component ? `; component ${component[1]}` : ''})` : ''));
   }
   return r.stdout;
 }
@@ -269,7 +270,7 @@ async function main() {
   assertContainer(projectIds[1], targetDir);
   dedicateManagedBaseline(targetContainer);
   // The helper is exercised with its true loopback and exact-database-name guard.
-  const restoreEnv = cleanEnv({ AGE_IDENTITY_FILE: keyFile, RESTORE_DB_URL: `postgresql://postgres:postgres@127.0.0.1:54322/${targetDb}`, TMPDIR: privateDir });
+  const restoreEnv = cleanEnv({ AGE_IDENTITY_FILE: keyFile, RESTORE_DB_URL: `postgresql://supabase_admin:postgres@127.0.0.1:54322/${targetDb}`, TMPDIR: privateDir });
   assertContainer(projectIds[1], targetDir);
   run('bash', [join(root, 'database/scripts/backup/restore-local-encrypted-backup.sh'), archive, manifest, targetDb], { env: restoreEnv, timeout: 600000, failure: 'encrypted restore into dedicated initialized target database failed' });
   assertContainer(projectIds[1], targetDir);
