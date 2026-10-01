@@ -12,6 +12,12 @@
 
 # testing
 /coverage
+/docs/evidence/
+
+# private operational backup outputs
+/private-backups/
+*.tar.age
+*.tar.age.manifest.json
 
 # next.js
 /.next/

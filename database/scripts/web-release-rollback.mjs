@@ -355,7 +355,7 @@ async function main() {
     await rejectEnvironmentFiles(currentDir);
     await rejectEnvironmentFiles(priorDir);
     console.log("release: installing dependencies from the current source lockfile");
-    run("npm", ["ci", "--no-audit", "--no-fund"], currentDir, safeBuildEnv(config));
+    run("npm", ["ci", "--include=dev", "--no-audit", "--no-fund"], currentDir, safeBuildEnv(config));
     console.log("release: building current candidate");
     run("npm", ["run", "build"], currentDir, safeBuildEnv(config));
     let server = await startWeb(currentDir, config);
@@ -366,7 +366,7 @@ async function main() {
     } finally { await stopWeb(server); }
 
     console.log(`rollback: installing dependencies from ${priorRef} lockfile`);
-    run("npm", ["ci", "--no-audit", "--no-fund"], priorDir, safeBuildEnv(config));
+    run("npm", ["ci", "--include=dev", "--no-audit", "--no-fund"], priorDir, safeBuildEnv(config));
     run("npm", ["run", "build"], priorDir, safeBuildEnv(config));
     server = await startWeb(priorDir, config);
     try {
