@@ -103,6 +103,15 @@ fi
 [[ "$history_rows" == 0 ]] || fail 'target migration history must be absent or empty'
 # CLI's dump files contain managed data rows; its generated data SQL disables
 # triggers in that session. Recreate only this project's Auth trigger hooks first.
-psql --no-psqlrc --single-transaction --variable ON_ERROR_STOP=1 --file "$tmp/roles.sql" --file "$tmp/schema.sql" --file "$tmp/migration-history-schema.sql" --file "$tmp/auth-customizations.sql" --command 'SET session_replication_role = replica' --file "$tmp/data.sql" --file "$tmp/migration-history-data.sql" --dbname "$safe_restore_url" >/dev/null 2>&1 || fail 'local restore failed (details suppressed)'
+psql --no-psqlrc --single-transaction --variable ON_ERROR_STOP=1 --variable VERBOSITY=sqlstate --variable SHOW_CONTEXT=never --file "$tmp/roles.sql" --file "$tmp/schema.sql" --file "$tmp/migration-history-schema.sql" --file "$tmp/auth-customizations.sql" --command 'SET session_replication_role = replica' --file "$tmp/data.sql" --file "$tmp/migration-history-data.sql" --dbname "$safe_restore_url" >/dev/null 2>"$tmp/restore-errors" || {
+  restore_sqlstate=$(python3 - "$tmp/restore-errors" <<'CODE'
+import re,sys
+text=open(sys.argv[1],encoding="utf-8",errors="replace").read()
+match=re.search(r"ERROR:\s+([0-9A-Z]{5})(?:\s|$)",text)
+print(match.group(1) if match else "unavailable")
+CODE
+)
+  fail "local restore failed (SQLSTATE $restore_sqlstate; details suppressed)"
+}
 unset PGPASSWORD
 printf 'Restore rehearsal completed in %s. Verify application-specific rows, roles, policies, and extensions locally.\n' "$db_name"

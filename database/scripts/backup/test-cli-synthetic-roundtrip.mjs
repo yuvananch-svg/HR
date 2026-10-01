@@ -37,7 +37,10 @@ function cleanEnv(extra = {}) {
 }
 function run(command, args, { cwd = root, env = cleanEnv(), input, timeout = 120000, failure = 'rehearsal command failed' } = {}) {
   const r = spawnSync(command, args, { cwd, env, input, encoding: 'utf8', timeout, maxBuffer: 16 * 1024 * 1024 });
-  if (r.error || r.status !== 0) die(failure);
+  if (r.error || r.status !== 0) {
+    const sqlstate = r.stderr?.match(/SQLSTATE ([0-9A-Z]{5})/);
+    die(failure + (sqlstate ? ` (SQLSTATE ${sqlstate[1]})` : ''));
+  }
   return r.stdout;
 }
 function sqlLit(s) { return `'${s.replaceAll("'", "''")}'`; }
