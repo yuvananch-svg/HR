@@ -1,6 +1,6 @@
 # Phase 5 acceptance — 2026-10-01 (Asia/Bangkok)
 
-Status: in progress. HR browser QA and final synthetic-fixture cleanup remain before closing 5.8–5.9.
+Status: core Phase 5 work accepted by the user on 2026-10-01. Items 5.8–5.9 are accepted with explicit follow-ups: HR browser QA is deferred at the user's request; final synthetic-fixture cleanup remains outstanding. This does not claim all-account QA or completed cleanup.
 
 ## Completed checks
 
@@ -13,10 +13,10 @@ Status: in progress. HR browser QA and final synthetic-fixture cleanup remain be
 - Mobile: list, detail and edit preview tested using the existing same-origin 375×900 CSS iframe. Document/body widths were 360/360px with no document overflow. This is viewport testing, not a physical iPhone.
 - Real-browser issue found: resolving a rejected form action reset native controls. Fix `8aa69df` remounts the form from retained controlled state. Vercel deployed successfully. A rejected save on the deployed version retained employee, type, dates, reason, confirmation and request key; the insufficient-quota message remained visible. Failed entry/request count was zero.
 
-## Remaining checks
+## Deferred follow-ups
 
 - Existing HR account: complete a real browser create/edit/cancel workflow and compare balances and audit. User sign-in is required; do not create or change credentials or roles for this check.
 - Guarded cleanup of synthetic Phase 5 data after HR QA. Keep real employees/accounts and unrelated audit unchanged. Pre-existing synthetic fixtures remain available for this test; rollback-only regression fixtures do not remain.
-- Mark 5.8 and 5.9 complete only after both checks pass.
+- The user explicitly accepted the core work and asked to update the plan while skipping HR for now. Keep these follow-ups open and record their results when completed.
 
 This public report intentionally contains no screenshots, account identifiers, employee personal information, session data or raw production records.
