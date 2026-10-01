@@ -204,12 +204,13 @@ async function currentJourney(base, config) {
     await page.getByRole("status").filter({ hasText: "สร้างสิทธิ์ที่ขาด" }).waitFor({ state: "visible" });
 
     await page.goto(`${base}/workspace/leave?year=${year}`);
+    await page.getByRole("heading", { name: "บันทึกวันลา", exact: true }).waitFor({ state: "visible" });
     const leaveForm = page.locator("form").filter({ has: page.getByRole("button", { name: "ดูตัวอย่างวันลา" }) });
-    const employeeSelect = leaveForm.getByLabel("พนักงาน", { exact: true });
+    const employeeSelect = leaveForm.locator('select[name="employee_id"]');
     const employeeOption = await employeeSelect.locator("option").filter({ hasText: employeeCode }).getAttribute("value");
     if (!employeeOption) fail("The created synthetic employee was not available in the leave form.");
     await employeeSelect.selectOption(employeeOption);
-    await leaveForm.getByLabel("ประเภทลา", { exact: true }).selectOption({ label: leaveType });
+    await leaveForm.locator('select[name="leave_type_id"]').selectOption({ label: leaveType });
     await leaveForm.locator('input[name="start_date"]').fill(leaveDate);
     await leaveForm.locator('input[name="end_date"]').fill(leaveDate);
     await leaveForm.getByLabel("เหตุผลการลา").fill("synthetic browser release acceptance");
@@ -277,7 +278,7 @@ async function smokeExisting(base, config, fixture) {
     await page.getByText(fixture.employeeName, { exact: false }).first().waitFor({ state: "visible" });
     await page.goto(`${base}/workspace/leave?year=${fixture.year}`);
     await page.getByLabel("ค้นหาชื่อหรือรหัส").fill(fixture.employeeCode);
-    await page.getByLabel("สถานะ", { exact: true }).selectOption("cancelled");
+    await page.locator('select[name="status"]').selectOption("cancelled");
     await page.getByRole("button", { name: "กรอง" }).click();
     await page.getByRole("link", { name: new RegExp(fixture.employeeCode) }).filter({ hasText: fixture.leaveType }).waitFor({ state: "visible" });
     const width = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));

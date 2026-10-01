@@ -157,12 +157,14 @@ process.exit(r.status??1);
 async function cloneManagedBaseline(container) {
   // Clone only the pristine Supabase-managed postgres baseline into a real
   // dedicated DB, preserving target-cluster built-in roles/extensions.
-  psql('postgres', `CREATE DATABASE ${targetDb};`);
+  psql('postgres', `CREATE DATABASE ${targetDb} TEMPLATE template0;`);
   for (const mode of ['--schema-only', '--data-only']) {
     await new Promise((resolvePromise, reject) => {
-      const dump = spawn('docker', ['exec', container.id, 'pg_dump', mode, '--no-owner', '-U', 'postgres', '-d', 'postgres'], { env: cleanEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
-      const load = spawn('docker', ['exec', '-i', container.id, 'psql', '--no-psqlrc', '--set=ON_ERROR_STOP=1', '-U', 'postgres', '-d', targetDb], { env: cleanEnv(), stdio: ['pipe', 'ignore', 'pipe'] });
-      dump.stderr.resume(); load.stderr.resume();
+      const dump = spawn('docker', ['exec', container.id, 'pg_dump', mode, '-U', 'postgres', '-d', 'postgres'], { env: cleanEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
+      const load = spawn('docker', ['exec', '-i', container.id, 'psql', '--no-psqlrc', '--set=ON_ERROR_STOP=1', '--set=VERBOSITY=sqlstate', '-U', 'postgres', '-d', targetDb], { env: cleanEnv(), stdio: ['pipe', 'ignore', 'pipe'] });
+      let errors = '';
+      dump.stderr.on('data', chunk => { errors = (errors + chunk).slice(-8192); });
+      load.stderr.on('data', chunk => { errors = (errors + chunk).slice(-8192); });
       let settled = false;
       const timer = setTimeout(() => { dump.kill('SIGKILL'); load.kill('SIGKILL'); finish(1, 1); }, 180000);
       dump.stdout.pipe(load.stdin);
@@ -171,7 +173,7 @@ async function cloneManagedBaseline(container) {
         if (settled || dumpStatus === null || loadStatus === null) return;
         settled = true; clearTimeout(timer);
         if (dumpStatus === 0 && loadStatus === 0) resolvePromise();
-        else { dump.kill(); load.kill(); reject(new Error('managed baseline clone failed')); }
+        else { dump.kill(); load.kill(); reject(new Error(`managed baseline clone failed (${mode}; SQLSTATE ${errors.match(/ERROR:\s+([0-9A-Z]{5})/)?.[1] ?? 'unavailable'})`)); }
       };
       load.stdin.on('error', () => { dump.kill(); finish(d ?? 1, l ?? 1); });
       dump.on('close', c => { d = c; if (c !== 0) load.kill(); finish(); });
@@ -204,7 +206,7 @@ async function main() {
   await writeProject(targetDir, projectIds[1], false);
   active.add(sourceDir);
   supabase(sourceDir, ['start'], 'source Supabase stack failed to start');
-  const sourceContainer = assertContainer(projectIds[0], sourceDir);
+  assertContainer(projectIds[0], sourceDir);
   const sourceStatus = supabase(sourceDir, ['status', '-o', 'env'], 'source status failed');
   const sourceDb = labelValue(sourceStatus, 'DB_URL');
   if (sourceDb !== 'postgresql://postgres:postgres@127.0.0.1:54322/postgres') die('source status returned an unexpected local database endpoint');
