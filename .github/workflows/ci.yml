@@ -84,7 +84,7 @@ jobs:
       - name: Install PostgreSQL client and isolated Chromium dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes postgresql-client age
+          sudo apt-get install --yes postgresql-client age ripgrep
           npx playwright install --with-deps chromium
       - name: Verify encrypted backup guards and synthetic cryptographic round trips
         run: |
