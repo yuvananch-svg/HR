@@ -15,6 +15,12 @@ do $$ begin
   end if;
 end $$;
 
+-- Reserve deterministic identities as the isolated test administrator, then
+-- exercise the normal revision-checked policy RPCs as the synthetic owner.
+insert into public.leave_types(id,name,is_active,sort_order)
+values('a7000000-0000-4000-8000-000000000002','P7 Restore Rehearsal',true,900);
+insert into public.holidays(id,holiday_date,name)
+values('a7000000-0000-4000-8000-000000000003',date '2096-01-03','Synthetic restore holiday');
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"76000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 do $$
@@ -46,10 +52,12 @@ begin
     raise exception 'synthetic bank account RPC did not persist';
   end if;
 
-  perform public.save_leave_type(leave_type,'P7 Restore Rehearsal',true,900001,null);
+  perform public.save_leave_type(leave_type,'P7 Restore Rehearsal',true,900,
+    (select updated_at from public.leave_types where id=leave_type));
   perform public.save_leave_policy_default(null,leave_type,2096,12.0,null);
   if public.generate_leave_entitlements(2096)<>1 then raise exception 'expected one synthetic entitlement'; end if;
-  saved_holiday:=public.save_holiday(leave_holiday,monday+1,'Synthetic restore holiday',null);
+  saved_holiday:=public.save_holiday(leave_holiday,monday+1,'Synthetic restore holiday',
+    (select updated_at from public.holidays where id=leave_holiday));
 
   preview:=public.preview_leave_entry(employee,leave_type,monday,monday+2,'full',null);
   if (select count(*) from jsonb_array_elements(preview->'days') d where (d->>'days')::numeric=1)<>2 then
