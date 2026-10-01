@@ -246,7 +246,9 @@ async function main() {
   const sourceFingerprint = psql('postgres', graphFingerprintSql);
   // Role OIDs differ across independent clusters; compare effective grants by
   // role name while retaining every privilege and grant-option entry.
+  if (psql('postgres', 'select count(*) from supabase_migrations.schema_migrations') !== String(migrationSources.length)) die('source CLI migration history does not contain the exact fixture migrations');
   const catalogFingerprintSql = (await readFile(join(root, 'database/tests/restore-rehearsal/fingerprint.sql'), 'utf8'))
+    .replaceAll("('public','hr_private','auth')", "('public','hr_private','auth','supabase_migrations')")
     .replace("grantor::text||':'||grantee::text", "pg_get_userbyid(grantor)||':'||case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end")
     .replace("order by grantor,grantee,privilege_type,is_grantable", "order by pg_get_userbyid(grantor),case when grantee=0 then 'PUBLIC' else pg_get_userbyid(grantee) end,privilege_type,is_grantable")
     .replace("c.relforcerowsecurity||':'||pg_temp.hr_acl", "c.relforcerowsecurity||':'||pg_get_userbyid(c.relowner)||':'||pg_temp.hr_acl")
@@ -290,7 +292,7 @@ async function main() {
     const sourceLines = new Set(sourceCatalogFingerprint.split('\n'));
     const restoredLines = new Set(restoredCatalogFingerprint.split('\n'));
     const changed = [...sourceLines].filter(line => !restoredLines.has(line)).concat([...restoredLines].filter(line => !sourceLines.has(line)));
-    const names = [...new Set(changed.map(line => line.split('|')[0]).filter(name => /^(?:(?:security:(?:table|schema|function|policy|constraint|trigger):)?(?:public|hr_private|auth)(?:\.[a-z_]+)?|defaultacl:postgres:(?:global|public|hr_private):[rSfTn])$/.test(name)))].sort();
+    const names = [...new Set(changed.map(line => line.split('|')[0]).filter(name => /^(?:(?:security:(?:table|schema|function|policy|constraint|trigger):)?(?:public|hr_private|auth|supabase_migrations)(?:\.[a-z_]+)?|defaultacl:postgres:(?:global|public|hr_private):[rSfTn])$/.test(name)))].sort();
     die(`restored checksums/security catalog differ from source (${names.slice(0,20).join(', ') || 'catalog output'}; ${names.length} object labels)`);
   }
   const checks = psql(targetDb, `select (exists(select 1 from pg_roles where rolname='hr_cli_backup_probe'))::int || ':' || (select relrowsecurity::int from pg_class where oid='public.employees'::regclass) || ':' || ((select count(*) from pg_policies where schemaname='public' and tablename='employees')>=3)::int || ':' || (select exists(select 1 from pg_proc where oid='public.save_holiday(uuid,date,text,timestamp with time zone)'::regprocedure))::int || ':' || has_table_privilege('authenticated','public.employees','select')::int || ':' || has_table_privilege('anon','public.employees','select')::int || ':' || has_function_privilege('authenticated','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || has_function_privilege('anon','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_created' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_changed' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_constraint where conrelid='public.app_users'::regclass and confrelid='auth.users'::regclass and contype='f' and pg_get_constraintdef(oid) ilike '%FOREIGN KEY (id) REFERENCES auth.users(id)%'))::int`);
@@ -299,7 +301,7 @@ async function main() {
   verifySql = verifySql.replaceAll('76000000-0000-4000-8000-000000000001', owner).replaceAll('76000000-0000-4000-8000-000000000002', hrActor);
   const verify = psql(targetDb, verifySql);
   if (!verify.includes('PASS: restored synthetic graph')) die('restored graph, balance, RLS, or RPC behavior verification failed');
-  successMessage = 'Synthetic CLI backup rehearsal passed: CLI 2.119.0 local dump, real age encryption/restore, separate Supabase clusters, dedicated hr_restore_synthetic database, Auth-to-HR FK graph, custom role, RLS and authenticated RPC. No real data or remote project was used.\n';
+  successMessage = 'Synthetic CLI backup rehearsal passed: CLI 2.119.0 local dump, real age encryption/restore, separate Supabase clusters, dedicated hr_restore_synthetic database, Auth-to-HR FK graph, exact migration history, table/schema/function owners, effective/default grants, custom role, RLS, RPC-only writes and leave balances. No real data or remote project was used.\n';
 }
 
 async function cleanup() {
