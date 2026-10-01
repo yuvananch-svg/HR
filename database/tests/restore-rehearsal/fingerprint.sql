@@ -19,6 +19,6 @@ select 'security-catalog', md5(coalesce(string_agg(value,E'\n' order by value),'
   union all select 'policy:'||schemaname||'.'||tablename||':'||policyname||':'||permissive||':'||roles::text||':'||cmd||':'||coalesce(qual,'')||':'||coalesce(with_check,'') from pg_policies where schemaname in ('public','hr_private','auth')
   union all select 'constraint:'||n.nspname||'.'||c.relname||':'||k.conname||':'||pg_get_constraintdef(k.oid)||':'||k.convalidated
   from pg_constraint k join pg_class c on c.oid=k.conrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','hr_private','auth')
-  union all select 'trigger:'||n.nspname||'.'||c.relname||':'||pg_get_triggerdef(t.oid)||':'||t.tgenabled
+  union all select 'trigger:'||n.nspname||'.'||c.relname||':'||pg_get_triggerdef(t.oid)||':'||t.tgenabled::text
   from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('public','hr_private','auth') and not t.tgisinternal
 ) catalog;
