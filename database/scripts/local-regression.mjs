@@ -99,6 +99,15 @@ function query(sql) {
   return (result.stdout ?? '').trim();
 }
 
+function verifyTargetDatabase() {
+  const target = query("select current_database() || '|' || current_setting('server_version')");
+  const delimiter = target.indexOf('|');
+  if (delimiter < 0 || target.slice(0, delimiter) !== databaseName) {
+    fail(`connected database did not report the required name ${databaseName}`);
+  }
+  console.log(`Connected to ${databaseName} on PostgreSQL ${target.slice(delimiter + 1)}.`);
+}
+
 function requireFreshDatabase() {
   const dirty = query(`
     select exists(select 1 from pg_namespace where nspname='hr_private')
@@ -149,6 +158,7 @@ function sqlFile(path) {
 }
 
 function bootstrap() {
+  verifyTargetDatabase();
   requireFreshDatabase();
   const files = [
     'database/tests/local-regression/auth-stub.sql',
@@ -172,6 +182,7 @@ function bootstrap() {
 }
 
 function regressions() {
+  verifyTargetDatabase();
   requireBootstrappedDatabase();
   const files = [
     'database/tests/hr_foundation.sql',
@@ -207,6 +218,7 @@ The target must be a dedicated, empty database named ${databaseName}.`);
   regressions();
 } else if (command === 'sql') {
   const file = sqlFile(args[1] ?? '');
+  verifyTargetDatabase();
   requireBootstrappedDatabase();
   console.log(`Running ${file.relative} on local ${databaseName}.`);
   runPsql(['--file', resolve(repoRoot, 'database/tests', file.relative)]);

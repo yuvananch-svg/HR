@@ -26,3 +26,32 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
+
+  database-regression:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: hr_regression_test
+          POSTGRES_USER: regression_runner
+          POSTGRES_PASSWORD: regression_runner_local_only
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd "pg_isready -U regression_runner -d hr_regression_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      HR_LOCAL_TEST_CONFIRM: dedicated-local-regression-only
+      HR_TEST_DATABASE_URL: postgresql://regression_runner:regression_runner_local_only@127.0.0.1:54322/hr_regression_test
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Bootstrap clean local test database and run SQL regressions
+        run: node database/scripts/local-regression.mjs all
