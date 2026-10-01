@@ -1,6 +1,6 @@
 # Phase 5 acceptance — 2026-10-01 (Asia/Bangkok)
 
-Status: core Phase 5 work accepted by the user on 2026-10-01. Items 5.8–5.9 are accepted with explicit follow-ups: HR browser QA is deferred at the user's request; final synthetic-fixture cleanup remains outstanding. This does not claim all-account QA or completed cleanup.
+Status: core Phase 5 work accepted by the user on 2026-10-01. Items 5.8–5.9 are accepted with explicit follow-ups: HR browser QA is deferred at the user's request; synthetic-fixture cleanup completed on 2026-10-01 at the user’s request. This does not claim all-account QA.
 
 ## Completed checks
 
@@ -16,7 +16,13 @@ Status: core Phase 5 work accepted by the user on 2026-10-01. Items 5.8–5.9 ar
 ## Deferred follow-ups
 
 - Existing HR account: complete a real browser create/edit/cancel workflow and compare balances and audit. User sign-in is required; do not create or change credentials or roles for this check.
-- Guarded cleanup of synthetic Phase 5 data after HR QA. Keep real employees/accounts and unrelated audit unchanged. Pre-existing synthetic fixtures remain available for this test; rollback-only regression fixtures do not remain.
+- Phase 5 fixtures have now been removed at the user’s request, before deferred HR QA. A future HR test must prepare a fresh scoped synthetic fixture.
 - The user explicitly accepted the core work and asked to update the plan while skipping HR for now. Keep these follow-ups open and record their results when completed.
 
 This public report intentionally contains no screenshots, account identifiers, employee personal information, session data or raw production records.
+
+## Final fixture cleanup — 2026-10-01
+
+Completed through a guarded transaction matching the exact synthetic employee/type identities, leave reasons, row counts and holiday identities. Removed six synthetic employees, four leave types, nine entries, twelve charged-day rows, twelve request rows, twelve entry audit rows, thirteen entitlements, five policy defaults and two fixture holidays. Unexpected personal dependencies or unrelated use of fixture types would abort cleanup.
+
+An independent follow-up query confirmed zero remaining scoped Phase 5 employees/types/holidays and zero leave entries/days/requests/entitlements/policies/audits. The real employee remains. Existing employee/type/entry/audit/account rows outside the fixture were compared inside the transaction and unchanged; both application accounts remain. No credentials, roles, auth accounts or invitations were modified.
