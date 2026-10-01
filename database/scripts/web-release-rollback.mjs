@@ -195,6 +195,12 @@ async function currentJourney(base, config) {
     await page.getByRole("status").filter({ hasText: "บันทึกประเภทลาแล้ว" }).waitFor({ state: "visible" });
 
     await page.goto(`${base}/workspace/settings?year=${year}`);
+    const waitForAnnualPolicy = async () => {
+      const policy = page.locator("form").filter({ has: page.locator("strong").filter({ hasText: leaveType }) });
+      await policy.locator('input[name="quota_days"]').waitFor({ state: "visible" });
+      await expect(policy.locator('input[name="year"]')).toHaveValue(String(year));
+    };
+    await waitForAnnualPolicy();
     // Give every active synthetic leave type a next-year standard so generation is enabled.
     for (let attempt = 0; attempt < 20; attempt++) {
       const defineQuota = page.getByRole("button", { name: "กำหนดโควตา" }).first();
@@ -204,6 +210,7 @@ async function currentJourney(base, config) {
       await defineQuota.click();
       await page.getByRole("status").filter({ hasText: "บันทึกโควตามาตรฐานแล้ว" }).waitFor({ state: "visible" });
       await page.goto(`${base}/workspace/settings?year=${year}`);
+      await waitForAnnualPolicy();
     }
     if (await page.getByRole("button", { name: "กำหนดโควตา" }).count() > 0) fail("Some active synthetic leave types still lack a next-year policy.");
 

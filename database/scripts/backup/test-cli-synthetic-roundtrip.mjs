@@ -252,7 +252,13 @@ async function main() {
     .replace("c.relforcerowsecurity||':'||pg_temp.hr_acl", "c.relforcerowsecurity||':'||pg_get_userbyid(c.relowner)||':'||pg_temp.hr_acl")
     .replace("nspname||':'||pg_temp.hr_acl(nspacl", "nspname||':'||pg_get_userbyid(nspowner)||':'||pg_temp.hr_acl(nspacl")
     .replace("pg_get_functiondef(p.oid)||':'||pg_temp.hr_acl", "pg_get_functiondef(p.oid)||':'||pg_get_userbyid(p.proowner)||':'||pg_temp.hr_acl");
-  const sourceCatalogFingerprint = psql('postgres', catalogFingerprintSql);
+  const defaultAclFingerprintSql = `select 'defaultacl:postgres:'||coalesce(n.nspname,'global')||':'||d.defaclobjtype::text,
+    md5(pg_temp.hr_acl(d.defaclacl,d.defaclobjtype,d.defaclrole))
+    from pg_default_acl d left join pg_namespace n on n.oid=d.defaclnamespace
+    where d.defaclrole='postgres'::regrole and (d.defaclnamespace=0 or n.nspname in ('public','hr_private'))
+    order by coalesce(n.nspname,'global'),d.defaclobjtype`;
+  const completeCatalogFingerprintSql = catalogFingerprintSql + '\n' + defaultAclFingerprintSql;
+  const sourceCatalogFingerprint = psql('postgres', completeCatalogFingerprintSql);
   const shimBin = join(work, 'shim-bin'); await mkdir(shimBin, { mode: 0o700 });
   const shimPath = join(shimBin, 'supabase'); await strictSupabaseShim(shimPath, { sourceWorkdir: sourceDir, tempRoot: privateDir });
   const archiveDir = join(privateDir, 'out'); await mkdir(archiveDir, { mode: 0o700 });
@@ -279,12 +285,12 @@ async function main() {
   assertContainer(projectIds[1], targetDir);
   const restoredFingerprint = psql(targetDb, graphFingerprintSql);
   if (restoredFingerprint !== sourceFingerprint) die('restored synthetic Auth/HR graph differs from source');
-  const restoredCatalogFingerprint = psql(targetDb, catalogFingerprintSql);
+  const restoredCatalogFingerprint = psql(targetDb, completeCatalogFingerprintSql);
   if (restoredCatalogFingerprint !== sourceCatalogFingerprint) {
     const sourceLines = new Set(sourceCatalogFingerprint.split('\n'));
     const restoredLines = new Set(restoredCatalogFingerprint.split('\n'));
     const changed = [...sourceLines].filter(line => !restoredLines.has(line)).concat([...restoredLines].filter(line => !sourceLines.has(line)));
-    const names = [...new Set(changed.map(line => line.split('|')[0]).filter(name => /^(?:security:(?:table|schema|function|policy|constraint|trigger):)?(?:public|hr_private|auth)(?:\.[a-z_]+)?$/.test(name)))].sort();
+    const names = [...new Set(changed.map(line => line.split('|')[0]).filter(name => /^(?:(?:security:(?:table|schema|function|policy|constraint|trigger):)?(?:public|hr_private|auth)(?:\.[a-z_]+)?|defaultacl:postgres:(?:global|public|hr_private):[rSfTn])$/.test(name)))].sort();
     die(`restored checksums/security catalog differ from source (${names.slice(0,20).join(', ') || 'catalog output'}; ${names.length} object labels)`);
   }
   const checks = psql(targetDb, `select (exists(select 1 from pg_roles where rolname='hr_cli_backup_probe'))::int || ':' || (select relrowsecurity::int from pg_class where oid='public.employees'::regclass) || ':' || ((select count(*) from pg_policies where schemaname='public' and tablename='employees')>=3)::int || ':' || (select exists(select 1 from pg_proc where oid='public.save_holiday(uuid,date,text,timestamp with time zone)'::regprocedure))::int || ':' || has_table_privilege('authenticated','public.employees','select')::int || ':' || has_table_privilege('anon','public.employees','select')::int || ':' || has_function_privilege('authenticated','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || has_function_privilege('anon','public.save_holiday(uuid,date,text,timestamp with time zone)','execute')::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_created' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_trigger where tgname='hr_authorized_account_changed' and not tgisinternal and pg_get_triggerdef(oid) ilike '%hr_private.sync_authorized_account%'))::int || ':' || (exists(select 1 from pg_constraint where conrelid='public.app_users'::regclass and confrelid='auth.users'::regclass and contype='f' and pg_get_constraintdef(oid) ilike '%FOREIGN KEY (id) REFERENCES auth.users(id)%'))::int`);
