@@ -107,10 +107,11 @@ psql --no-psqlrc --single-transaction --variable ON_ERROR_STOP=1 --variable VERB
   mapfile -t restore_error_summary < <(python3 - "$tmp/restore-errors" <<'CODE'
 import re,sys
 text=open(sys.argv[1],encoding="utf-8",errors="replace").read()
-match=re.search(r"ERROR:\s+([0-9A-Z]{5})(?:\s|$)",text)
+error_line=next((line for line in text.splitlines() if re.search(r"ERROR:\s+[0-9A-Z]{5}(?:\s|$)",line)), "")
+match=re.search(r"ERROR:\s+([0-9A-Z]{5})(?:\s|$)",error_line)
 print(match.group(1) if match else "unavailable")
 allowed={"roles.sql","schema.sql","data.sql","migration-history-schema.sql","migration-history-data.sql","auth-customizations.sql"}
-component=re.search(r"psql:[^\n]*?/([^/\n:]+):[0-9]+:",text)
+component=re.search(r"psql:[^\n]*?/([^/\n:]+):[0-9]+:",error_line)
 print(component.group(1) if component and component.group(1) in allowed else "unavailable")
 CODE
 )

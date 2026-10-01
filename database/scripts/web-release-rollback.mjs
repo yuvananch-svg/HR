@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
@@ -148,6 +148,18 @@ function futureWorkDays(year) {
   if (days.length !== 2) fail("Unable to select deterministic workdays for the synthetic leave record.");
   return days;
 }
+async function assertPreviewBalance(page, leaveType) {
+  const row = page.getByRole("region", { name: "ตัวอย่างวันลา" }).getByRole("row")
+    .filter({ hasText: leaveType }).filter({ hasText: "หลังคืนยอดเดิม" });
+  await expect(row.locator("td").nth(1)).toHaveText("3");
+  await expect(row.locator("td").nth(2)).toHaveText("0");
+  await expect(row.locator("td").nth(3)).toHaveText("1");
+  await expect(row.locator("td").nth(4)).toHaveText("2");
+}
+async function assertLeaveAudit(page, actions) {
+  const audit = page.locator("section").filter({ has: page.getByRole("heading", { name: "ประวัติการเปลี่ยนแปลง", exact: true }) });
+  await expect(audit.locator("li > strong")).toHaveText(actions);
+}
 async function currentJourney(base, config) {
   const browser = await chromium.launch({ headless: true });
   const year = new Date().getUTCFullYear() + 1;
@@ -216,6 +228,7 @@ async function currentJourney(base, config) {
     await leaveForm.getByLabel("เหตุผลการลา").fill("synthetic browser release acceptance");
     await leaveForm.getByRole("button", { name: "ดูตัวอย่างวันลา" }).click();
     await page.getByRole("region", { name: "ตัวอย่างวันลา" }).waitFor({ state: "visible" });
+    await assertPreviewBalance(page, leaveType);
     await page.getByLabel("ฉันตรวจสอบวันที่และยอดคงเหลือแล้ว").check();
     await page.getByRole("button", { name: "ยืนยันบันทึกวันลา" }).click();
     await page.getByRole("heading", { name: new RegExp(`${employeeName} Synthetic`) }).waitFor({ state: "visible" });
@@ -223,6 +236,7 @@ async function currentJourney(base, config) {
     if (!/^[0-9a-f-]{36}$/i.test(leaveId ?? "")) fail("The saved leave record did not open its detail page.");
     await page.locator("p").filter({ hasText: leaveType }).filter({ hasText: "บันทึกแล้ว" }).first().waitFor({ state: "visible" });
 
+    await assertLeaveAudit(page, ["บันทึก"]);
     await page.getByRole("heading", { name: "แก้ไขรายการ" }).scrollIntoViewIfNeeded();
     const editForm = page.locator("form").filter({ has: page.getByLabel("เหตุผลการแก้ไข") });
     await editForm.locator('input[name="start_date"]').fill(editedLeaveDate);
@@ -230,20 +244,26 @@ async function currentJourney(base, config) {
     await page.getByLabel("เหตุผลการแก้ไข").fill("synthetic edit rehearsal");
     await editForm.getByRole("button", { name: "ดูตัวอย่างวันลา" }).click();
     await page.getByRole("region", { name: "ตัวอย่างวันลา" }).waitFor({ state: "visible" });
+    await assertPreviewBalance(page, leaveType);
     await page.getByLabel("ฉันตรวจสอบวันที่และยอดคงเหลือแล้ว").check();
     await page.getByRole("button", { name: "ยืนยันบันทึกวันลา" }).click();
     await page.locator("p").filter({ hasText: leaveType }).filter({ hasText: editedLeaveDate }).first().waitFor({ state: "visible" });
 
+    await assertLeaveAudit(page, ["แก้ไข", "บันทึก"]);
     page.once("dialog", dialog => dialog.accept());
     await page.getByLabel("เหตุผลการยกเลิก").fill("synthetic cancellation rehearsal");
     await page.getByRole("button", { name: "ยกเลิกรายการ" }).click();
     await page.locator("p").filter({ hasText: leaveType }).filter({ hasText: "ยกเลิกแล้ว" }).first().waitFor({ state: "visible" });
-    await page.getByText("ประวัติการเปลี่ยนแปลง", { exact: true }).waitFor({ state: "visible" });
+    await assertLeaveAudit(page, ["ยกเลิก", "แก้ไข", "บันทึก"]);
 
     await page.goto(`${base}/workspace/leave?year=${year}`);
     await page.getByLabel("ค้นหาชื่อหรือรหัส").fill(employeeCode);
     await page.getByRole("button", { name: "กรอง" }).click();
     await page.getByRole("link", { name: new RegExp(employeeCode) }).filter({ hasText: leaveType }).waitFor({ state: "visible" });
+    const balance = page.getByRole("row").filter({ hasText: employeeName }).filter({ hasText: leaveType });
+    await expect(balance.locator("td").nth(2)).toHaveText("3");
+    await expect(balance.locator("td").nth(3)).toHaveText("0");
+    await expect(balance.locator("td").nth(4)).toHaveText("3");
     await page.goto(`${base}/workspace`);
     await page.getByRole("heading", { name: "ภาพรวม" }).waitFor({ state: "visible" });
     await page.getByText(employeeName, { exact: false }).first().waitFor({ state: "visible" });
