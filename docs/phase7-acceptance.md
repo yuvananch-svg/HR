@@ -1,0 +1,42 @@
+# Phase 7 readiness record — 2026-10-01 (Asia/Bangkok)
+
+Status: in progress. Implementation and operational preparation are reviewable; Phase 7 is not fully accepted. User selected the no-additional-cost backup approach. HR browser QA remains explicitly deferred.
+
+## Baseline verified read-only
+
+- Main at start: `874256e`; Vercel deployment succeeded. HRM was active/healthy on PostgreSQL 17.6; organization plan Free.
+- All thirteen public application tables had RLS enabled. Production contained one employee, no leave types/entries, and two active application memberships (one owner, one HR). Membership is not proof of completed browser QA.
+- Both Phase 5 and Phase 6 persistent fixtures were previously cleaned; real employee and existing accounts were preserved. No production database mutation was performed in this Phase 7 preparation.
+- Remote migration history has eight entries; checkout migration directory has three Phase 4/5 entries with different timestamps. Local bootstrap uses baseline SQL sources explicitly; migration history reconciliation remains open.
+- Vercel project settings were inspected through the existing signed-in browser: no project environment variables or linked shared variables were present. A production-variable edit was rejected by automatic approval review for lack of exact variable authorization; no values were submitted. Awaiting explicit user approval for production URL, existing publishable key and target=production. Auth URL/SMTP configuration and actual backup state remain unverified.
+
+## Reviewed changes and verification
+
+- Supabase configuration is resolved at client creation and validates environment, URL and public key. Development/test/preview reject the approved production project. Secret keys and privileged legacy JWTs are rejected. An explicitly partial/blank configuration fails.
+- Temporary continuity bridge remains solely when Node and Vercel markers are both production and both URL/key variables are absent. It preserves the existing deployed setup while explicit production settings remain unverified. Missing production variables are NOT yet a completed fail-closed rollout gate. The bridge must be removed after environment verification.
+- Read-only GitHub Actions CI uses synthetic configuration and pinned action SHAs; it runs app tests, database target-guard tests, lint, typecheck and build. Initial hosted run [36826503361](https://github.com/yuvananch-svg/HR/actions/runs/36826503361) passed for source commit `d1863aa`. An ephemeral PostgreSQL 17 job was added in `417fd1b`; initial connection failure exposed an inherited-service-variable bug. Fix `092cfcd` strips inherited PG connection variables and reconstructs only validated local fields. Hosted run [36827170647](https://github.com/yuvananch-svg/HR/actions/runs/36827170647) passed both frontend and fresh database jobs.
+- Auth tests cover absent/inactive membership, forbidden role, forged metadata and Auth errors; authorization uses verified Auth user and staff membership, not user metadata. RPC/source review confirmed staff guards, restricted execute grants and no newly exposed privileged key/logging.
+- Local verification: 85 app tests and six database-runner target-guard tests and three concurrency-controller tests passed (nine total, including hostile inherited PG variables); lint/typecheck, fixture build, production-marker compatibility build and diff checks passed. Dependency audits of all and production dependencies returned zero vulnerabilities at inspection time. Build checks do not prove live authentication. After source commit `d1863aa` deployed successfully, an existing owner browser session rendered the dashboard (one employee, zero people on leave) and the empty leave page after reload; no mutations were made.
+- Isolated SQL runner accepts only a dedicated loopback database named `hr_regression_test`, requires an explicit acknowledgement, rejects URL overrides and dirty/public or populated Auth targets, and clears connection override defaults. Bootstrap includes baseline/accounts/Phase 3–5 and local mocked Auth, not a full Supabase stack. Six rollback regressions and allowed concurrency harnesses are prepared.
+- PostgreSQL 16.15 binaries were installed, but initdb refuses root and the execution environment cannot switch users (`setgroups`/`setuid` denied). No SQL server ran in the interactive workspace. Subsequent hosted CI on PostgreSQL 17.11 successfully executed the complete fresh bootstrap and all six rollback regressions (foundation, Phase 3, Phase 4, Phase 5, Phase 6 mutation refresh and Phase 6 >1,000-row read model). Mocked Auth remains a test boundary, not full Supabase/Auth/PostgREST acceptance. The first hosted race observed distinct backends with A holding the advisory lock and B blocked by A, but failed its expected-overlap assertion because fixture quota 1 reached the insufficient-quota branch first. Cleanup and the two-actor empty-data baseline passed. A focused test-only fix increased synthetic quota to 2; final hosted run [36828629726](https://github.com/yuvananch-svg/HR/actions/runs/36828629726) for `819864c` passed both jobs. PostgreSQL 17.11 showed distinct A/B backend PIDs, A holding the advisory lock, B waiting and A in `pg_blocking_pids(B)`. A saved one entry; B received `overlap_conflict`. Verification found one entry, charged day and audit; cleanup returned eleven fixture counts to zero and preserved exactly two synthetic read actors/invitations with no other application rows. No fallback cleanup remained pending. Production RPCs were unchanged.
+- Environment, operator, backup/recovery, release/rollback and privacy-safe monitoring guidance is in [environment.md](environment.md), [operations.md](operations.md) and the [local database guide](../database/tests/local-regression/README.md).
+
+## Open gates, not completed checklist items
+
+| Item | Remaining evidence or decision |
+| --- | --- |
+| 7.1 | Named operational owner and owner-only versus full owner/HR acceptance scope. |
+| 7.2 | Fresh isolated SQL execution and hosted CI now passed; reconcile source versus remote migration history and verify explicit production variables before removing legacy bridge. |
+| 7.3 | Review Supabase leaked-password protection warning with operator; current Free plan capability/cost must be checked before any change. No Auth settings were changed. |
+| 7.4 | Supabase dashboard redirected to sign-in, so current redirect/SMTP settings need a dashboard login and intended-recipient recovery testing; existing HR browser QA remains deferred. |
+| 7.5 | User-selected free approach now needs an approved encrypted destination/key handling, backup owner, cadence/retention and recovery targets; actual backup and separate restore validation have not occurred. |
+| 7.6 | Organization leave types/quotas/holidays, data retention/access and import decisions. No guessed policies or real-data imports. |
+| 7.7 | Fresh six-suite SQL regression and genuine independent-session concurrency/cleanup now passed in isolated CI. A release-level browser workflow against an isolated Supabase stack remains open; production owner read-only smoke passed. Existing Phase 3–6 browser evidence is historical, not a new full Phase 7 run. |
+| 7.8 | Actual staging release/rollback rehearsal and monitoring ownership/channel. Runbooks alone do not close the gate. |
+| 7.9 | Operator trial of guides, evidence consolidation and user acceptance after required gates. |
+
+Official sources: [Supabase backup coverage](https://supabase.com/docs/guides/platform/backups), [password security](https://supabase.com/docs/guides/auth/password-security), [local development](https://supabase.com/docs/guides/local-development). Free projects should maintain off-site exports; database backups do not contain Storage object files. No production dump, credential, account address or personal employee record is included in public evidence.
+
+## Published code and deployment
+
+Reviewed source and CI changes were published through `d1863aa`, `417fd1b`, `092cfcd`, `013f874` and the test-only fixture correction `819864c`. Latest code CI [36828629726](https://github.com/yuvananch-svg/HR/actions/runs/36828629726) and [Vercel deployment](https://vercel.com/thesecretwealth-tung/hr/23HXHbSr6JRRjoDJJimyVZbQTHr4) both succeeded. The public report excludes private screenshots. Phase 7 remains open until the gates above are addressed; passing CI does not constitute production backup/restore or all-role acceptance.
