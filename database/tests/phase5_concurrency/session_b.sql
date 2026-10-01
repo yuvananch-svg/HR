@@ -1,5 +1,6 @@
 -- Start promptly after session_a.sql reports its first preview and enters sleep.
 begin;
+set local application_name='hr_phase5_race_b';
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d5000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 do $$

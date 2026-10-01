@@ -22,7 +22,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: node --test database/scripts/local-regression.test.mjs
+      - run: node --test database/scripts/*.test.mjs
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
@@ -54,4 +54,12 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes postgresql-client
       - name: Bootstrap clean local test database and run SQL regressions
+        id: sql-regressions
         run: node database/scripts/local-regression.mjs all
+      - name: Verify Phase 5 concurrent overlapping saves
+        id: phase5-concurrency
+        if: steps.sql-regressions.outcome == 'success'
+        run: node database/scripts/phase5-concurrency.mjs
+      - name: Recover interrupted Phase 5 fixture cleanup
+        if: ${{ always() && steps.phase5-concurrency.outcome != 'skipped' }}
+        run: node database/scripts/phase5-concurrency.mjs cleanup-fallback

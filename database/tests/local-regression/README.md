@@ -18,6 +18,8 @@ node database/scripts/local-regression.mjs all
 
 `all` atomically bootstraps the schema and runs the six SQL regressions. For a database already bootstrapped by this harness, use `node database/scripts/local-regression.mjs regressions`. The runner refuses to bootstrap over public application objects or existing `auth.users` rows; start with a new empty database after any interrupted bootstrap.
 
+After the six regressions, run `node database/scripts/phase5-concurrency.mjs` to execute the Phase 5 overlap check automatically. It uses the same guarded runner for setup, session A, session B, verification, and cleanup, and starts session B only after session A's lock notice. It also polls a read-only PostgreSQL status query until it observes two distinct backend PIDs, A holding an advisory lock, B waiting on an advisory lock, and `pg_blocking_pids(B)` including A. A passing notice without that database-side overlap evidence is a failed run. The harness checks the seeded local actor baseline before setup and after cleanup, and kills both child process groups before cleanup on errors. The CI workflow runs this after the six regressions and has a marker-gated fallback cleanup step for interrupted jobs; hosted concurrency evidence is pending.
+
 ## Independent-session concurrency checks
 
 The following commands go through the same loopback, exact-database, acknowledgement, and URL checks. Run each `sql` command in its own terminal process. Do not execute these on a hosted project. The harness has not recorded a successful overlapping race yet.

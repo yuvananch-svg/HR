@@ -151,6 +151,8 @@ function sqlFile(path) {
     'phase4_concurrency/cleanup.sql', 'phase5_concurrency/setup.sql',
     'phase5_concurrency/session_a.sql', 'phase5_concurrency/session_b.sql',
     'phase5_concurrency/verify.sql', 'phase5_concurrency/cleanup.sql',
+    'phase5_concurrency/status.sql',
+    'local-regression/verify-baseline.sql',
   ]);
   const relative = absolute.slice(testsRoot.length).replaceAll('\\', '/');
   if (!allowed.has(relative)) fail('SQL mode is limited to the existing Phase 4/5 concurrency harness files');

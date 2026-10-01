@@ -1,5 +1,6 @@
 -- Run session A, then start session_b.sql while this script is sleeping.
 begin;
+set local application_name='hr_phase5_race_a';
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d5000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 do $$
