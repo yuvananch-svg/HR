@@ -12,10 +12,20 @@ describe("Supabase environment configuration", () => {
     expect(resolveSupabaseConfig(safe)).toEqual({ ...safe });
   });
 
-  it("requires target, URL, and key instead of embedded defaults", () => {
+  it("requires target, URL, and key explicitly, even in a marked production runtime", () => {
+    const productionMarkers = { vercelEnvironment: "production", nodeEnvironment: "production" };
     expect(() => resolveSupabaseConfig({ ...safe, target: undefined })).toThrow("NEXT_PUBLIC_SUPABASE_TARGET");
     expect(() => resolveSupabaseConfig({ ...safe, url: undefined })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
     expect(() => resolveSupabaseConfig({ ...safe, key: undefined })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: safe.url, key: safe.key, ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_TARGET");
+    expect(() => resolveSupabaseConfig({ target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: undefined, key: safe.key, target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: "", key: safe.key, target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: "   ", key: safe.key, target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: safe.url, key: undefined, target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: safe.url, key: "", target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: safe.url, key: "   ", target: "production", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_URL");
+    expect(() => resolveSupabaseConfig({ url: safe.url, key: safe.key, target: "", ...productionMarkers })).toThrow("NEXT_PUBLIC_SUPABASE_TARGET");
   });
 
   it("rejects invalid URLs and privileged keys", () => {
@@ -46,15 +56,22 @@ describe("Supabase environment configuration", () => {
     expect(() => resolveSupabaseConfig({ ...safe, url: "https://other.supabase.co", target: "production" })).toThrow("approved production");
   });
 
-  it("allows the legacy fallback only in a fully marked production runtime", () => {
-    expect(resolveSupabaseConfig({ vercelEnvironment: "production", nodeEnvironment: "production" }).url)
-      .toBe("https://kedohmbtpegupndldkex.supabase.co");
-    expect(() => resolveSupabaseConfig({ vercelEnvironment: "production", nodeEnvironment: "production", url: "" }))
-      .toThrow("NEXT_PUBLIC_SUPABASE_URL");
-    expect(() => resolveSupabaseConfig({ target: "production", vercelEnvironment: "production", nodeEnvironment: "development" }))
-      .toThrow("NEXT_PUBLIC_SUPABASE_URL");
-    expect(() => resolveSupabaseConfig({ ...safe, target: "production", nodeEnvironment: "development" }))
+  it("accepts explicit production settings and enforces runtime/host markers", () => {
+    const url = "https://kedohmbtpegupndldkex.supabase.co";
+    const production = {
+      url,
+      key: safe.key,
+      target: "production",
+      vercelEnvironment: "production",
+      nodeEnvironment: "production",
+    };
+    expect(resolveSupabaseConfig(production)).toEqual({ url, key: safe.key, target: "production" });
+    expect(() => resolveSupabaseConfig({ ...production, nodeEnvironment: "development" }))
       .toThrow("only valid in a production Node.js runtime");
+    expect(() => resolveSupabaseConfig({ ...production, vercelEnvironment: "preview" }))
+      .toThrow("only valid in a Vercel production");
+    expect(() => resolveSupabaseConfig({ ...production, url: "https://other.supabase.co" }))
+      .toThrow("approved production");
   });
 
   it("ties Vercel deployment environment to the explicit target", () => {

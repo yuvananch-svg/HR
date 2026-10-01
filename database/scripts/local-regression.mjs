@@ -6,9 +6,12 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const confirmation = 'dedicated-local-regression-only';
-const databaseName = 'hr_regression_test';
+const sourceDatabaseName = 'hr_regression_test';
+const restoreDatabaseName = 'hr_regression_restore_test';
 const args = process.argv.slice(2);
 const command = args[0] ?? 'help';
+const restoreTarget = args.includes('--restore-target');
+const databaseName = restoreTarget ? restoreDatabaseName : sourceDatabaseName;
 
 function fail(message) {
   console.error(`local-regression: ${message}`);
@@ -58,6 +61,9 @@ function connection() {
 }
 
 const helpRequested = ['help', '--help', '-h'].includes(command);
+if (restoreTarget && command !== 'regressions' && !helpRequested) {
+  fail('--restore-target is supported only for the rollback-only regressions command');
+}
 const pgEnv = helpRequested ? {} : connection();
 
 function sanitizedPsqlEnv() {
@@ -164,6 +170,7 @@ function sqlFile(path) {
 }
 
 function bootstrap() {
+  if (restoreTarget) fail('bootstrap is restricted to the primary local regression database');
   verifyTargetDatabase();
   requireFreshDatabase();
   const files = [
@@ -211,10 +218,11 @@ if (command === 'help' || command === '--help' || command === '-h') {
   HR_LOCAL_TEST_CONFIRM=${confirmation} HR_TEST_DATABASE_URL=postgresql://USER:PASSWORD@127.0.0.1:PORT/${databaseName} node database/scripts/local-regression.mjs all
   node database/scripts/local-regression.mjs bootstrap
   node database/scripts/local-regression.mjs regressions
+  node database/scripts/local-regression.mjs regressions --restore-target
   node database/scripts/local-regression.mjs sql database/tests/phase5_concurrency/session_a.sql
 
 Every command requires the local-only confirmation and loopback database URL.
-The target must be a dedicated, empty database named ${databaseName}.`);
+The normal target must be a dedicated, empty database named ${sourceDatabaseName}; --restore-target selects only ${restoreDatabaseName}.`);
 } else if (command === 'bootstrap') {
   bootstrap();
 } else if (command === 'regressions') {

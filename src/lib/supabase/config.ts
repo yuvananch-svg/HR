@@ -15,9 +15,6 @@ export interface SupabaseConfig {
 }
 
 const productionProjectHost = "kedohmbtpegupndldkex.supabase.co";
-// Temporary production continuity bridge; remove after deployment env verification.
-const legacyProductionUrl = "https://kedohmbtpegupndldkex.supabase.co";
-const legacyProductionKey = "sb_publishable_Mc7jlowpsmEIW33y7UmSeQ_X1Xov0d9";
 
 function normalizedTarget(value: string | undefined): SupabaseEnvironment {
   if (value === "development" || value === "preview" || value === "production" || value === "test") return value;
@@ -37,14 +34,10 @@ function isUnsafeKey(key: string): boolean {
 }
 
 export function resolveSupabaseConfig(input: SupabaseConfigInput): SupabaseConfig {
-  const productionRuntime = input.vercelEnvironment === "production" && input.nodeEnvironment === "production";
-  const target = normalizedTarget(input.target ?? (productionRuntime ? "production" : undefined));
-  let url = input.url?.trim();
-  let key = input.key?.trim();
-  if (input.url === undefined && input.key === undefined && productionRuntime && target === "production") {
-    url = legacyProductionUrl;
-    key = legacyProductionKey;
-  } else if (!url || !key) {
+  const target = normalizedTarget(input.target);
+  const url = input.url?.trim();
+  const key = input.key?.trim();
+  if (!url || !key) {
     throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY explicitly.");
   }
 

@@ -60,6 +60,21 @@ test('URL query overrides are rejected before psql starts', () => {
   assert.match(result.stderr, /query parameters and fragments are not accepted/);
 });
 
+test('restore-target accepts only the second fixed local database name', () => {
+  const result = spawnSync(process.execPath, [runner, 'regressions', '--restore-target'], {
+    cwd: root,
+    env: {
+      ...process.env,
+      HR_LOCAL_TEST_CONFIRM: 'dedicated-local-regression-only',
+      HR_TEST_DATABASE_URL: validUrl,
+    },
+    encoding: 'utf8',
+    timeout: 5000,
+  });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /database name must be exactly hr_regression_restore_test/);
+});
+
 test('psql inherits only the validated local connection settings', () => {
   const temp = mkdtempSync(join(tmpdir(), 'hr-local-regression-'));
   try {
