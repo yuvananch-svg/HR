@@ -54,15 +54,19 @@ function connection() {
     PGPASSWORD: decodeURIComponent(parsed.password),
     PGSSLMODE: 'disable',
     PGPASSFILE: '/dev/null',
-    PGSERVICE: '',
-    PGSERVICEFILE: '/dev/null',
-    PGHOSTADDR: '',
-    PGOPTIONS: '',
   };
 }
 
 const helpRequested = ['help', '--help', '-h'].includes(command);
 const pgEnv = helpRequested ? {} : connection();
+
+function sanitizedPsqlEnv() {
+  const env = { ...process.env };
+  for (const name of Object.keys(env)) {
+    if (/^PG[A-Z0-9_]*$/i.test(name)) delete env[name];
+  }
+  return { ...env, ...pgEnv };
+}
 
 function psqlArgs(extra = []) {
   return ['--no-psqlrc', '--no-password', '--set=ON_ERROR_STOP=1', '--dbname', databaseName, ...extra];
@@ -71,7 +75,7 @@ function psqlArgs(extra = []) {
 function runPsql(extra, input) {
   const result = spawnSync('psql', psqlArgs(extra), {
     cwd: repoRoot,
-    env: { ...process.env, ...pgEnv },
+    env: sanitizedPsqlEnv(),
     input,
     encoding: 'utf8',
     stdio: input === undefined ? 'inherit' : ['pipe', 'inherit', 'inherit'],
@@ -85,7 +89,7 @@ function runPsql(extra, input) {
 function query(sql) {
   const result = spawnSync('psql', psqlArgs(['--tuples-only', '--no-align', '--quiet', '--command', sql]), {
     cwd: repoRoot,
-    env: { ...process.env, ...pgEnv },
+    env: sanitizedPsqlEnv(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
