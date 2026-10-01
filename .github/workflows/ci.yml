@@ -122,7 +122,13 @@ jobs:
       - name: Install matching PostgreSQL client and encryption tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes postgresql-client-17 age ripgrep
+          sudo apt-get install --yes curl ca-certificates age ripgrep
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          printf 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/hr-pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client-17
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - name: Rehearse genuine CLI dumps and encrypted restore in separate synthetic clusters
         run: node database/scripts/backup/test-cli-synthetic-roundtrip.mjs
